@@ -480,3 +480,10 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+
+# --- Proyecto Alma del Mar Pampeano ---
+# Base SQLite que dejó la plantilla (el proyecto usa SQL Server)
+app.db
+# Archivos subidos por los usuarios
+wwwroot/adjuntos/

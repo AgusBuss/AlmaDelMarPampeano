@@ -1,45 +1,72 @@
-﻿using Microsoft.AspNetCore.Identity;
+using AlmaDelMarPampeano.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace AlmaDelMarPampeano.Data
 {
     public static class DbInitializer
     {
+        public const string RolAdministrador = "Administrador";
+        public const string RolCliente = "Cliente";
+
+        // Credenciales de PRUEBA para la corrección (van también en el README)
+        public const string AdminEmail = "admin@almapampeana.com";
+        public const string AdminPass = "Admin123!";
+        public const string ClienteEmail = "cliente@almapampeana.com";
+        public const string ClientePass = "Cliente123!";
+
         public static async Task Initialize(IServiceProvider serviceProvider)
         {
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = serviceProvider.GetRequiredService<UserManager<IdentityUser>>();
+            var context = serviceProvider.GetRequiredService<ApplicationDbContext>();
 
-            // 1. Crear los roles
-            string[] roleNames = { "Administrador", "Cliente" };
-            foreach (var roleName in roleNames)
+            // 1. Roles
+            foreach (var roleName in new[] { RolAdministrador, RolCliente })
             {
-                var roleExist = await roleManager.RoleExistsAsync(roleName);
-                if (!roleExist)
+                if (!await roleManager.RoleExistsAsync(roleName))
                 {
                     await roleManager.CreateAsync(new IdentityRole(roleName));
                 }
             }
 
-            // 2. Crear el Usuario Administrador por defecto
-            string adminEmail = "admin@almapampeana.com";
-            string adminPass = "Admin123!"; // Contraseña con mayúscula, número y símbolo
-            var adminUser = await userManager.FindByEmailAsync(adminEmail);
+            // 2. Usuarios de prueba
+            await CrearUsuarioSiNoExiste(userManager, AdminEmail, AdminPass, RolAdministrador);
+            await CrearUsuarioSiNoExiste(userManager, ClienteEmail, ClientePass, RolCliente);
 
-            if (adminUser == null)
+            // 3. Estados de pedido (el primero, "Pendiente", es el estado inicial de todo pedido nuevo)
+            if (!await context.EstadosPedido.AnyAsync())
             {
-                var newAdmin = new IdentityUser
-                {
-                    UserName = adminEmail,
-                    Email = adminEmail,
-                    EmailConfirmed = true
-                };
+                context.EstadosPedido.AddRange(
+                    new EstadoPedido { NombreEstado = "Pendiente" },
+                    new EstadoPedido { NombreEstado = "En producción" },
+                    new EstadoPedido { NombreEstado = "Terminado" },
+                    new EstadoPedido { NombreEstado = "Entregado" },
+                    new EstadoPedido { NombreEstado = "Cancelado" });
+                await context.SaveChangesAsync();
+            }
+        }
 
-                var createPowerUser = await userManager.CreateAsync(newAdmin, adminPass);
-                if (createPowerUser.Succeeded)
-                {
-                    // Le asignamos el rol
-                    await userManager.AddToRoleAsync(newAdmin, "Administrador");
-                }
+        private static async Task CrearUsuarioSiNoExiste(
+            UserManager<IdentityUser> userManager, string email, string password, string rol)
+        {
+            var usuario = await userManager.FindByEmailAsync(email);
+            if (usuario == null)
+            {
+                usuario = new IdentityUser { UserName = email, Email = email, EmailConfirmed = true };
+
+                // CreateAsync(user) + AddPasswordAsync en lugar de CreateAsync(user, password)
+                // para que AppUserManager no le agregue el rol "Cliente" al administrador.
+                var creado = await userManager.CreateAsync(usuario);
+                if (!creado.Succeeded) return;
+
+                var conClave = await userManager.AddPasswordAsync(usuario, password);
+                if (!conClave.Succeeded) return;
+            }
+
+            if (!await userManager.IsInRoleAsync(usuario, rol))
+            {
+                await userManager.AddToRoleAsync(usuario, rol);
             }
         }
     }

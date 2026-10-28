@@ -99,9 +99,6 @@ namespace AlmaDelMarPampeano.Migrations
                     b.Property<int>("PedidoId")
                         .HasColumnType("int");
 
-                    b.Property<int>("TipoBaseMaderaId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("MaterialBaseId");

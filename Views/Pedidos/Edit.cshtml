@@ -1,4 +1,4 @@
-﻿@model AlmaDelMarPampeano.Models.Pedido
+@model AlmaDelMarPampeano.ViewModels.PedidoEditViewModel
 
 @{
     ViewData["Title"] = "Editar Pedido";
@@ -10,28 +10,33 @@
     <div class="col-md-6">
         <form asp-action="Edit">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            
-            <!-- Datos que no se tocan pero deben viajar al controlador -->
             <input type="hidden" asp-for="Id" />
-            <input type="hidden" asp-for="UsuarioId" />
-            <input type="hidden" asp-for="FechaSolicitud" />
-            <input type="hidden" asp-for="PrecioTotal" />
 
-            <div class="form-group mb-3">
-                <label asp-for="EstadoPedidoId" class="control-label">Cambiar Estado</label>
-                <select asp-for="EstadoPedidoId" class="form-control" asp-items="ViewBag.EstadoPedidoId"></select>
-                <span asp-validation-for="EstadoPedidoId" class="text-danger"></span>
-            </div>
-            
+            @if (Model.PuedeCambiarEstado)
+            {
+                <div class="form-group mb-3">
+                    <label asp-for="EstadoPedidoId" class="control-label"></label>
+                    <select asp-for="EstadoPedidoId" class="form-control" asp-items="Model.Estados"></select>
+                    <span asp-validation-for="EstadoPedidoId" class="text-danger"></span>
+                </div>
+            }
+            else
+            {
+                <div class="mb-3">
+                    <label class="control-label d-block">Estado del pedido</label>
+                    <span class="badge bg-info text-dark">@Model.EstadoActual</span>
+                </div>
+            }
+
             <div class="form-group mb-3">
                 <label asp-for="Observaciones" class="control-label"></label>
                 <textarea asp-for="Observaciones" class="form-control" rows="3"></textarea>
                 <span asp-validation-for="Observaciones" class="text-danger"></span>
             </div>
-            
+
             <div class="form-group mt-4">
                 <input type="submit" value="Guardar Cambios" class="btn btn-primary" />
-                <a asp-action="Index" class="btn btn-secondary ms-2">Volver a la lista</a>
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary ms-2">Cancelar</a>
             </div>
         </form>
     </div>

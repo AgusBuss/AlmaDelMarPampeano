@@ -8,35 +8,40 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-// ACÁ ESTÁ EL CAMBIO A SQL SERVER
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddRoles<IdentityRole>() // <-- ESTO ES LO NUEVO
+// RequireConfirmedAccount = false: no hay servicio de mail, así que los usuarios
+// nuevos pueden ingresar apenas se registran.
+// AddUserManager<AppUserManager>: cada usuario que se registra recibe el rol "Cliente".
+builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
+    .AddRoles<IdentityRole>()
+    .AddUserManager<AppUserManager>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-// --- INICIO INICIALIZADOR DE ROLES ---
+// --- INICIO: migraciones + datos iniciales (roles, usuarios de prueba, estados) ---
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
-        await DbInitializer.Initialize(services);
+        var db = services.GetRequiredService<ApplicationDbContext>();
+        await db.Database.MigrateAsync();          // crea/actualiza la base si hace falta
+        await DbInitializer.Initialize(services);  // roles, admin, cliente de prueba y estados
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Ocurrió un error al crear los roles.");
+        logger.LogError(ex, "Ocurrió un error al inicializar la base de datos.");
     }
 }
-// --- FIN INICIALIZADOR DE ROLES ---
+// --- FIN ---
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -53,6 +58,7 @@ else
 app.UseHttpsRedirection();
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
