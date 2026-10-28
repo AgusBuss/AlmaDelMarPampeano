@@ -1,0 +1,42 @@
+﻿@model AlmaDelMarPampeano.Models.Pedido
+
+@{
+    ViewData["Title"] = "Editar Pedido";
+}
+
+<h1>Editar Pedido #@Model.Id</h1>
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            
+            <!-- Datos que no se tocan pero deben viajar al controlador -->
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="UsuarioId" />
+            <input type="hidden" asp-for="FechaSolicitud" />
+            <input type="hidden" asp-for="PrecioTotal" />
+
+            <div class="form-group mb-3">
+                <label asp-for="EstadoPedidoId" class="control-label">Cambiar Estado</label>
+                <select asp-for="EstadoPedidoId" class="form-control" asp-items="ViewBag.EstadoPedidoId"></select>
+                <span asp-validation-for="EstadoPedidoId" class="text-danger"></span>
+            </div>
+            
+            <div class="form-group mb-3">
+                <label asp-for="Observaciones" class="control-label"></label>
+                <textarea asp-for="Observaciones" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Observaciones" class="text-danger"></span>
+            </div>
+            
+            <div class="form-group mt-4">
+                <input type="submit" value="Guardar Cambios" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary ms-2">Volver a la lista</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

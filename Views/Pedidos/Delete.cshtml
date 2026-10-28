@@ -1,0 +1,27 @@
+﻿@model AlmaDelMarPampeano.Models.Pedido
+
+@{
+    ViewData["Title"] = "Borrar Pedido";
+}
+
+<h1 class="text-danger">Borrar Pedido #@Model.Id</h1>
+<h3>¿Estás seguro de que querés eliminar esto?</h3>
+<div>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">Fecha</dt>
+        <dd class="col-sm-10">@Model.FechaSolicitud</dd>
+        
+        <dt class="col-sm-2">Precio Total</dt>
+        <dd class="col-sm-10">$ @Model.PrecioTotal</dd>
+        
+        <dt class="col-sm-2">Estado</dt>
+        <dd class="col-sm-10">@(Model.EstadoPedido != null ? Model.EstadoPedido.NombreEstado : "")</dd>
+    </dl>
+    
+    <form asp-action="Delete" class="mt-4">
+        <input type="hidden" asp-for="Id" />
+        <input type="submit" value="Confirmar Borrado" class="btn btn-danger" />
+        <a asp-action="Index" class="btn btn-secondary ms-2">Cancelar</a>
+    </form>
+</div>

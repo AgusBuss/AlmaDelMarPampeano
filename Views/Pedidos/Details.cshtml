@@ -1,0 +1,143 @@
+﻿@model AlmaDelMarPampeano.Models.Pedido
+
+@{
+    ViewData["Title"] = "Detalles del Pedido";
+}
+
+<h1>Detalles del Pedido #@Model.Id</h1>
+
+<div>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">Fecha de Solicitud</dt>
+        <dd class="col-sm-10">@Model.FechaSolicitud.ToString("dd/MM/yyyy HH:mm")</dd>
+
+        <dt class="col-sm-2">Precio Total</dt>
+        <dd class="col-sm-10 fw-bold">$ @Model.PrecioTotal.ToString("0.00")</dd>
+
+        <dt class="col-sm-2">Observaciones</dt>
+        <dd class="col-sm-10">@Model.Observaciones</dd>
+
+        <dt class="col-sm-2">Estado</dt>
+        <dd class="col-sm-10">
+            <span class="badge bg-info text-dark">@(Model.EstadoPedido != null ? Model.EstadoPedido.NombreEstado : "N/A")</span>
+        </dd>
+    </dl>
+</div>
+
+<div class="mt-4">
+    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Editar Estado/Obs</a>
+    <a asp-action="Index" class="btn btn-secondary ms-2">Volver a la lista</a>
+</div>
+
+<hr class="mt-5" />
+
+<!-- SECCIÓN DE DETALLES (LÁMPARAS) -->
+<h3>Lámparas incluidas en este Pedido</h3>
+<p>
+    <a asp-action="AgregarDetalle" asp-route-id="@Model.Id" class="btn btn-success mb-3">
+        + Añadir Lámpara
+    </a>
+</p>
+
+<table class="table table-bordered mb-5">
+    <thead class="table-light">
+        <tr>
+            <th>Campana</th>
+            <th>Base</th>
+            <th>Cant.</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Detalles != null && Model.Detalles.Any())
+        {
+            foreach (var detalle in Model.Detalles)
+            {
+                <tr>
+                    <td>@(detalle.MaterialCampana != null ? detalle.MaterialCampana.Nombre : "N/A")</td>
+                    <td>@(detalle.MaterialBase != null ? detalle.MaterialBase.TipoMaterial : "N/A")</td>
+                    <td>@detalle.Cantidad</td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="3" class="text-center text-muted">Aún no se han agregado lámparas a este pedido.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<hr class="mt-5" />
+
+<!-- SECCIÓN DE ARCHIVOS ADJUNTOS -->
+<h3>Archivos y Referencias</h3>
+
+<div class="row">
+    <!-- Formulario para subir archivo -->
+    <div class="col-md-5 mb-4">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                Subir nuevo archivo
+            </div>
+            <div class="card-body">
+                <form asp-action="SubirArchivo" asp-controller="Pedidos" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="pedidoId" value="@Model.Id" />
+
+                    <div class="form-group mb-3">
+                        <label class="control-label">Tipo de Documento</label>
+                        <select name="tipoDocumento" class="form-select">
+                            <option value="Referencia">Imagen de Referencia</option>
+                            <option value="Comprobante">Comprobante de Pago</option>
+                            <option value="Presupuesto">Presupuesto PDF</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="control-label">Seleccionar Archivo</label>
+                        <input type="file" name="archivoSubido" class="form-control" required />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Subir Archivo</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de archivos subidos -->
+    <div class="col-md-7">
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Archivo</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Archivos != null && Model.Archivos.Any())
+                {
+                    foreach (var archivo in Model.Archivos)
+                    {
+                        <tr>
+                            <td>@archivo.FechaSubida.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td><span class="badge bg-secondary">@archivo.TipoDocumento</span></td>
+                            <td>@archivo.NombreArchivo</td>
+                            <td>
+                                <a href="@archivo.RutaArchivo" target="_blank" class="btn btn-sm btn-outline-primary">Ver / Descargar</a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">No hay archivos adjuntos en este pedido.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
