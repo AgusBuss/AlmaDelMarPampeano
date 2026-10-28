@@ -67,8 +67,20 @@ namespace AlmaDelMarPampeano.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Entidad")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EntidadId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("FechaHora")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("TipoAccion")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UsuarioEmail")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UsuarioId")
                         .IsRequired()

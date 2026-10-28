@@ -21,6 +21,7 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
     .AddUserManager<AppUserManager>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
+builder.Services.AddHttpContextAccessor(); // lo usa ApplicationDbContext para saber qué usuario hace cada cambio
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
