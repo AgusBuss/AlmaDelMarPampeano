@@ -89,12 +89,28 @@ public class EstadoPedidosController : Controller
             return NotFound();
         }
 
+        var original = await _context.EstadosPedido
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == estadopedido.Id);
+        if (original == null)
+        {
+            return NotFound();
+        }
+
+        // "Pendiente" lo busca el sistema por nombre: no se puede renombrar
+        if (original.NombreEstado == "Pendiente" && estadopedido.NombreEstado != "Pendiente")
+        {
+            ModelState.AddModelError(nameof(estadopedido.NombreEstado),
+                "El estado \"Pendiente\" no se puede renombrar porque el sistema lo usa para los pedidos nuevos.");
+        }
+
         if (ModelState.IsValid)
         {
             try
             {
                 _context.Update(estadopedido);
                 await _context.SaveChangesAsync();
+                TempData["Exito"] = "El estado se actualizó correctamente.";
             }
             catch (DbUpdateConcurrencyException)
             {

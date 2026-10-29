@@ -151,6 +151,9 @@ namespace AlmaDelMarPampeano.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal>("Precio")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("TipoMaterial")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");

@@ -264,7 +264,7 @@ namespace AlmaDelMarPampeano.Controllers
             _context.DetallesPedido.Add(detalle);
 
             // El precio lo calcula siempre el servidor
-            pedido.PrecioTotal += campana.PrecioBase * detalle.Cantidad;
+            pedido.PrecioTotal += (campana.PrecioBase + material.Precio) * detalle.Cantidad;
 
             await _context.SaveChangesAsync();
 
@@ -278,7 +278,7 @@ namespace AlmaDelMarPampeano.Controllers
             var bases = await _context.MaterialesBase.OrderBy(b => b.TipoMaterial).ToListAsync();
 
             vm.Campanas = campanas.Select(c => new SelectListItem($"{c.Nombre} - $ {c.PrecioBase:0.00}", c.Id.ToString()));
-            vm.Bases = bases.Select(b => new SelectListItem(b.TipoMaterial, b.Id.ToString()));
+            vm.Bases = bases.Select(b => new SelectListItem($"{b.TipoMaterial} (+ $ {b.Precio:0.00})", b.Id.ToString()));
         }
 
         // ---------------------------------------------------------------- QUITAR LÁMPARA
@@ -304,7 +304,7 @@ namespace AlmaDelMarPampeano.Controllers
             // El total se recalcula siempre con las lámparas que quedan
             pedido.PrecioTotal = pedido.Detalles
                 .Where(d => d.Id != detalleId)
-                .Sum(d => (d.MaterialCampana?.PrecioBase ?? 0) * d.Cantidad);
+                                .Sum(d => ((d.MaterialCampana?.PrecioBase ?? 0) + (d.MaterialBase?.Precio ?? 0)) * d.Cantidad);
 
             await _context.SaveChangesAsync();
 
