@@ -7,7 +7,8 @@ namespace AlmaDelMarPampeano.Models
         [Key]
         public int Id { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "El nombre del estado es obligatorio")]
+        [Display(Name = "Nombre del estado")]
         public string NombreEstado { get; set; }
     }
 }

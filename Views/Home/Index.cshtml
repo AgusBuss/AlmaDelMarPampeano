@@ -1,8 +1,18 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Inicio";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="text-center py-4">
+    <h1 class="display-4">Alma del Mar Pampeano</h1>
+    <p class="lead">Lámparas artesanales a medida. Elegí la campana y la base, y seguí el estado de tu pedido desde acá.</p>
+
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <a asp-controller="Pedidos" asp-action="Index" class="btn btn-primary btn-lg">Ver mis pedidos</a>
+    }
+    else
+    {
+        <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-primary btn-lg">Ingresar</a>
+        <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-outline-secondary btn-lg ms-2">Registrarme</a>
+    }
 </div>
