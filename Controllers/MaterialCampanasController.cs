@@ -136,12 +136,23 @@ public class MaterialCampanasController : Controller
     public async Task<IActionResult> DeleteConfirmed(int? id)
     {
         var materialcampana = await _context.MaterialesCampana.FindAsync(id);
-        if (materialcampana != null)
+        if (materialcampana == null)
         {
-            _context.MaterialesCampana.Remove(materialcampana);
+            return RedirectToAction(nameof(Index));
         }
 
-        await _context.SaveChangesAsync();
+        try
+        {
+            _context.MaterialesCampana.Remove(materialcampana);
+            await _context.SaveChangesAsync();
+            TempData["Exito"] = "La campana se eliminó correctamente.";
+        }
+        catch (DbUpdateException)
+        {
+            // La base rechaza el borrado si alguna lámpara de algún pedido usa esta campana
+            TempData["Error"] = $"No se puede eliminar la campana \"{materialcampana.Nombre}\" porque está incluida en pedidos existentes.";
+        }
+
         return RedirectToAction(nameof(Index));
     }
 

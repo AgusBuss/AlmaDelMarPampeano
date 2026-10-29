@@ -136,12 +136,30 @@ public class EstadoPedidosController : Controller
     public async Task<IActionResult> DeleteConfirmed(int? id)
     {
         var estadopedido = await _context.EstadosPedido.FindAsync(id);
-        if (estadopedido != null)
+        if (estadopedido == null)
         {
-            _context.EstadosPedido.Remove(estadopedido);
+            return RedirectToAction(nameof(Index));
         }
 
-        await _context.SaveChangesAsync();
+        // "Pendiente" es el estado inicial de todo pedido nuevo: el sistema lo busca por nombre
+        if (estadopedido.NombreEstado == "Pendiente")
+        {
+            TempData["Error"] = "El estado \"Pendiente\" no se puede eliminar porque el sistema lo usa para todos los pedidos nuevos.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        try
+        {
+            _context.EstadosPedido.Remove(estadopedido);
+            await _context.SaveChangesAsync();
+            TempData["Exito"] = "El estado se eliminó correctamente.";
+        }
+        catch (DbUpdateException)
+        {
+            // La base rechaza el borrado si algún pedido todavía usa este estado
+            TempData["Error"] = $"No se puede eliminar el estado \"{estadopedido.NombreEstado}\" porque hay pedidos que lo están usando.";
+        }
+
         return RedirectToAction(nameof(Index));
     }
 

@@ -281,6 +281,37 @@ namespace AlmaDelMarPampeano.Controllers
             vm.Bases = bases.Select(b => new SelectListItem(b.TipoMaterial, b.Id.ToString()));
         }
 
+        // ---------------------------------------------------------------- QUITAR LÁMPARA
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> QuitarDetalle(int pedidoId, int detalleId)
+        {
+            var pedido = await ObtenerPedidoPermitidoAsync(pedidoId, incluirRelaciones: true);
+            if (pedido == null) return NotFound();
+
+            // Mismo criterio que para borrar el pedido: solo en "Pendiente" (el administrador siempre puede)
+            if (!PuedeBorrar(pedido))
+            {
+                TempData["Error"] = "Solo se pueden quitar lámparas de pedidos en estado \"Pendiente\".";
+                return RedirectToAction(nameof(Details), new { id = pedidoId });
+            }
+
+            var detalle = pedido.Detalles.FirstOrDefault(d => d.Id == detalleId);
+            if (detalle == null) return NotFound();
+
+            _context.DetallesPedido.Remove(detalle);
+
+            // El total se recalcula siempre con las lámparas que quedan
+            pedido.PrecioTotal = pedido.Detalles
+                .Where(d => d.Id != detalleId)
+                .Sum(d => (d.MaterialCampana?.PrecioBase ?? 0) * d.Cantidad);
+
+            await _context.SaveChangesAsync();
+
+            TempData["Exito"] = "La lámpara se quitó del pedido.";
+            return RedirectToAction(nameof(Details), new { id = pedidoId });
+        }
+
         // ---------------------------------------------------------------- ARCHIVOS
         [HttpPost]
         [ValidateAntiForgeryToken]

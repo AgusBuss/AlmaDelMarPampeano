@@ -2,6 +2,9 @@
 
 @{
     ViewData["Title"] = "Detalles del Pedido";
+
+    // El cliente solo puede modificar lámparas mientras el pedido está "Pendiente"; el administrador siempre
+    var puedeQuitar = User.IsInRole("Administrador") || Model.EstadoPedido?.NombreEstado == "Pendiente";
 }
 
 <h1>Detalles del Pedido #@Model.Id</h1>
@@ -46,6 +49,7 @@
             <th>Campana</th>
             <th>Base</th>
             <th>Cant.</th>
+            <th>Acción</th>
         </tr>
     </thead>
     <tbody>
@@ -57,13 +61,25 @@
                     <td>@(detalle.MaterialCampana != null ? detalle.MaterialCampana.Nombre : "N/A")</td>
                     <td>@(detalle.MaterialBase != null ? detalle.MaterialBase.TipoMaterial : "N/A")</td>
                     <td>@detalle.Cantidad</td>
+                    <td>
+                        @if (puedeQuitar)
+                        {
+                            <form asp-action="QuitarDetalle" asp-controller="Pedidos" method="post"
+                                  class="form-eliminar d-inline"
+                                  data-mensaje="Se va a quitar esta lámpara del pedido.">
+                                <input type="hidden" name="pedidoId" value="@Model.Id" />
+                                <input type="hidden" name="detalleId" value="@detalle.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Quitar</button>
+                            </form>
+                        }
+                    </td>
                 </tr>
             }
         }
         else
         {
             <tr>
-                <td colspan="3" class="text-center text-muted">Aún no se han agregado lámparas a este pedido.</td>
+                <td colspan="4" class="text-center text-muted">Aún no se han agregado lámparas a este pedido.</td>
             </tr>
         }
     </tbody>

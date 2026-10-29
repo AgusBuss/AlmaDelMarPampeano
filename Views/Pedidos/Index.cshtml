@@ -21,6 +21,12 @@
         </tr>
     </thead>
     <tbody>
+@if (!Model.Any())
+{
+        <tr>
+            <td colspan="5" class="text-center text-muted">Todavía no hay pedidos.</td>
+        </tr>
+}
 @foreach (var item in Model) {
         <tr>
             <td>@item.FechaSolicitud.ToString("dd/MM/yyyy HH:mm")</td>
@@ -30,7 +36,14 @@
             <td>
                 <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-primary">Editar</a>
                 <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info text-white">Detalles</a>
-                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Borrar</a>
+                @if (User.IsInRole("Administrador") || item.EstadoPedido?.NombreEstado == "Pendiente")
+                {
+                    <form asp-action="Delete" asp-route-id="@item.Id" method="post"
+                          class="form-eliminar d-inline"
+                          data-mensaje="Se va a eliminar el pedido #@item.Id con todas sus lámparas y archivos.">
+                        <button type="submit" class="btn btn-sm btn-danger">Borrar</button>
+                    </form>
+                }
             </td>
         </tr>
 }

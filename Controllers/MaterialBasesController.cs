@@ -136,12 +136,23 @@ public class MaterialBasesController : Controller
     public async Task<IActionResult> DeleteConfirmed(int? id)
     {
         var materialbase = await _context.MaterialesBase.FindAsync(id);
-        if (materialbase != null)
+        if (materialbase == null)
         {
-            _context.MaterialesBase.Remove(materialbase);
+            return RedirectToAction(nameof(Index));
         }
 
-        await _context.SaveChangesAsync();
+        try
+        {
+            _context.MaterialesBase.Remove(materialbase);
+            await _context.SaveChangesAsync();
+            TempData["Exito"] = "La base se eliminó correctamente.";
+        }
+        catch (DbUpdateException)
+        {
+            // La base rechaza el borrado si alguna lámpara de algún pedido usa esta base
+            TempData["Error"] = $"No se puede eliminar la base \"{materialbase.TipoMaterial}\" porque está incluida en pedidos existentes.";
+        }
+
         return RedirectToAction(nameof(Index));
     }
 

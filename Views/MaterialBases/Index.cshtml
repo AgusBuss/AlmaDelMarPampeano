@@ -33,7 +33,11 @@
             <td>
                 <a asp-action="Edit" asp-route-id="@item.Id">Editar</a> |
                 <a asp-action="Details" asp-route-id="@item.Id">Detalles</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Eliminar</a>
+                <form asp-action="Delete" asp-route-id="@item.Id" method="post"
+                      class="form-eliminar d-inline"
+                      data-mensaje="Se va a eliminar la base &quot;@item.TipoMaterial&quot;.">
+                    <button type="submit" class="btn btn-link p-0 align-baseline text-danger">Eliminar</button>
+                </form>
             </td>
         </tr>
 }

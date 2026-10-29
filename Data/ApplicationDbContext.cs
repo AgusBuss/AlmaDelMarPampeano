@@ -26,6 +26,31 @@ namespace AlmaDelMarPampeano.Data
         public DbSet<ArchivoAdjunto> ArchivosAdjuntos { get; set; }
         public DbSet<Auditoria> Auditorias { get; set; }
 
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            // Los datos de catálogo en uso no se pueden borrar (evita borrados en cascada accidentales).
+            // Para borrarlos primero hay que quitarlos de los pedidos que los usan.
+            builder.Entity<DetallePedido>()
+                .HasOne(d => d.MaterialCampana)
+                .WithMany()
+                .HasForeignKey(d => d.MaterialCampanaId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<DetallePedido>()
+                .HasOne(d => d.MaterialBase)
+                .WithMany()
+                .HasForeignKey(d => d.MaterialBaseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Pedido>()
+                .HasOne(p => p.EstadoPedido)
+                .WithMany()
+                .HasForeignKey(p => p.EstadoPedidoId)
+                .OnDelete(DeleteBehavior.Restrict);
+        }
+
         // ------------------------------------------------------------------
         // AUDITORÍA AUTOMÁTICA
         // Cada vez que un usuario logueado crea, modifica o elimina una de estas

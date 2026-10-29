@@ -17,7 +17,7 @@ namespace AlmaDelMarPampeano.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -434,13 +434,13 @@ namespace AlmaDelMarPampeano.Migrations
                     b.HasOne("AlmaDelMarPampeano.Models.MaterialBase", "MaterialBase")
                         .WithMany()
                         .HasForeignKey("MaterialBaseId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("AlmaDelMarPampeano.Models.MaterialCampana", "MaterialCampana")
                         .WithMany()
                         .HasForeignKey("MaterialCampanaId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("AlmaDelMarPampeano.Models.Pedido", "Pedido")
@@ -461,7 +461,7 @@ namespace AlmaDelMarPampeano.Migrations
                     b.HasOne("AlmaDelMarPampeano.Models.EstadoPedido", "EstadoPedido")
                         .WithMany()
                         .HasForeignKey("EstadoPedidoId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("EstadoPedido");
