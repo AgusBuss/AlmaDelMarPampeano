@@ -15,6 +15,10 @@ namespace AlmaDelMarPampeano.ViewModels
         [Display(Name = "Base")]
         public int? MaterialBaseId { get; set; }
 
+        [Required(ErrorMessage = "Elegí el tipo de luz.")]
+        [Display(Name = "Tipo de luz")]
+        public int? TipoLuzId { get; set; }
+
         [Required(ErrorMessage = "Ingresá la cantidad.")]
         [Range(1, 100, ErrorMessage = "La cantidad debe estar entre 1 y 100.")]
         [Display(Name = "Cantidad")]
@@ -22,5 +26,6 @@ namespace AlmaDelMarPampeano.ViewModels
 
         public IEnumerable<SelectListItem>? Campanas { get; set; }
         public IEnumerable<SelectListItem>? Bases { get; set; }
+        public IEnumerable<SelectListItem>? TiposLuz { get; set; }
     }
 }

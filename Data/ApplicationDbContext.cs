@@ -25,6 +25,7 @@ namespace AlmaDelMarPampeano.Data
         public DbSet<DetallePedido> DetallesPedido { get; set; }
         public DbSet<ArchivoAdjunto> ArchivosAdjuntos { get; set; }
         public DbSet<Auditoria> Auditorias { get; set; }
+        public DbSet<TipoLuz> TiposLuz { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -49,6 +50,12 @@ namespace AlmaDelMarPampeano.Data
                 .WithMany()
                 .HasForeignKey(p => p.EstadoPedidoId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<DetallePedido>()
+                .HasOne(d => d.TipoLuz)
+                .WithMany()
+                .HasForeignKey(d => d.TipoLuzId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
 
         // ------------------------------------------------------------------
@@ -64,7 +71,8 @@ namespace AlmaDelMarPampeano.Data
             { typeof(ArchivoAdjunto), "Archivo adjunto" },
             { typeof(MaterialCampana), "Campana" },
             { typeof(MaterialBase), "Base" },
-            { typeof(EstadoPedido), "Estado de pedido" }
+            { typeof(EstadoPedido), "Estado de pedido" },
+            { typeof(TipoLuz), "Tipo de luz" }
         };
 
         private sealed record CambioPendiente(

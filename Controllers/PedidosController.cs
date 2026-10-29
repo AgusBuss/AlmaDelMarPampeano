@@ -43,6 +43,7 @@ namespace AlmaDelMarPampeano.Controllers
                 query = query
                     .Include(p => p.Detalles).ThenInclude(d => d.MaterialCampana)
                     .Include(p => p.Detalles).ThenInclude(d => d.MaterialBase)
+                    .Include(p => p.Detalles).ThenInclude(d => d.TipoLuz)
                     .Include(p => p.Archivos);
             }
 
@@ -247,9 +248,10 @@ namespace AlmaDelMarPampeano.Controllers
 
             var campana = await _context.MaterialesCampana.FindAsync(vm.MaterialCampanaId!.Value);
             var material = await _context.MaterialesBase.FindAsync(vm.MaterialBaseId!.Value);
-            if (campana == null || material == null)
+            var tipoLuz = await _context.TiposLuz.FindAsync(vm.TipoLuzId!.Value);
+            if (campana == null || material == null || tipoLuz == null)
             {
-                ModelState.AddModelError(string.Empty, "Alguno de los materiales elegidos ya no existe. Probá de nuevo.");
+                ModelState.AddModelError(string.Empty, "Alguna de las opciones elegidas ya no existe. Probá de nuevo.");
                 await CargarListasAsync(vm);
                 return View(vm);
             }
@@ -259,6 +261,7 @@ namespace AlmaDelMarPampeano.Controllers
                 PedidoId = pedido.Id,
                 MaterialCampanaId = campana.Id,
                 MaterialBaseId = material.Id,
+                TipoLuzId = tipoLuz.Id,
                 Cantidad = vm.Cantidad!.Value
             };
             _context.DetallesPedido.Add(detalle);
@@ -276,9 +279,11 @@ namespace AlmaDelMarPampeano.Controllers
         {
             var campanas = await _context.MaterialesCampana.OrderBy(c => c.Nombre).ToListAsync();
             var bases = await _context.MaterialesBase.OrderBy(b => b.TipoMaterial).ToListAsync();
+            var tipos = await _context.TiposLuz.OrderBy(t => t.Id).ToListAsync();
 
             vm.Campanas = campanas.Select(c => new SelectListItem($"{c.Nombre} - $ {c.PrecioBase:0.00}", c.Id.ToString()));
-            vm.Bases = bases.Select(b => new SelectListItem($"{b.TipoMaterial} (+ $ {b.Precio:0.00})", b.Id.ToString()));
+            vm.Bases = bases.Select(b => new SelectListItem($"{b.TipoMaterial} - $ {b.Precio:0.00}", b.Id.ToString()));
+            vm.TiposLuz = tipos.Select(t => new SelectListItem(t.Nombre, t.Id.ToString()));
         }
 
         // ---------------------------------------------------------------- QUITAR LÁMPARA
@@ -304,7 +309,7 @@ namespace AlmaDelMarPampeano.Controllers
             // El total se recalcula siempre con las lámparas que quedan
             pedido.PrecioTotal = pedido.Detalles
                 .Where(d => d.Id != detalleId)
-                                .Sum(d => ((d.MaterialCampana?.PrecioBase ?? 0) + (d.MaterialBase?.Precio ?? 0)) * d.Cantidad);
+                .Sum(d => ((d.MaterialCampana?.PrecioBase ?? 0) + (d.MaterialBase?.Precio ?? 0)) * d.Cantidad);
 
             await _context.SaveChangesAsync();
 

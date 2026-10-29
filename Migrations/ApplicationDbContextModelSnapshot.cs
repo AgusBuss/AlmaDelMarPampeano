@@ -111,6 +111,9 @@ namespace AlmaDelMarPampeano.Migrations
                     b.Property<int>("PedidoId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("TipoLuzId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("MaterialBaseId");
@@ -118,6 +121,8 @@ namespace AlmaDelMarPampeano.Migrations
                     b.HasIndex("MaterialCampanaId");
 
                     b.HasIndex("PedidoId");
+
+                    b.HasIndex("TipoLuzId");
 
                     b.ToTable("DetallesPedido");
                 });
@@ -217,6 +222,28 @@ namespace AlmaDelMarPampeano.Migrations
                     b.HasIndex("EstadoPedidoId");
 
                     b.ToTable("Pedidos");
+                });
+
+            modelBuilder.Entity("AlmaDelMarPampeano.Models.TipoLuz", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TiposLuz");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -452,11 +479,18 @@ namespace AlmaDelMarPampeano.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("AlmaDelMarPampeano.Models.TipoLuz", "TipoLuz")
+                        .WithMany()
+                        .HasForeignKey("TipoLuzId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("MaterialBase");
 
                     b.Navigation("MaterialCampana");
 
                     b.Navigation("Pedido");
+
+                    b.Navigation("TipoLuz");
                 });
 
             modelBuilder.Entity("AlmaDelMarPampeano.Models.Pedido", b =>

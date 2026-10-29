@@ -49,6 +49,7 @@
             <th>Campana</th>
             <th>Base</th>
             <th>Cant.</th>
+            <th>Tipo de luz</th>
             <th>Acción</th>
         </tr>
     </thead>
@@ -61,6 +62,7 @@
                     <td>@(detalle.MaterialCampana != null ? detalle.MaterialCampana.Nombre : "N/A")</td>
                     <td>@(detalle.MaterialBase != null ? detalle.MaterialBase.TipoMaterial : "N/A")</td>
                     <td>@detalle.Cantidad</td>
+                    <td>@(detalle.TipoLuz?.Nombre ?? "—")</td>
                     <td>
                         @if (puedeQuitar)
                         {

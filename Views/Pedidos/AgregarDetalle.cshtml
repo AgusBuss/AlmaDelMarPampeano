@@ -1,42 +1,52 @@
 @model AlmaDelMarPampeano.ViewModels.DetalleCreateViewModel
 
 @{
-    ViewData["Title"] = "Agregar Lámpara";
+    ViewData["Title"] = "Agregar lámpara";
 }
 
-<h1>Agregar lámpara al Pedido #@Model.PedidoId</h1>
+<h1>Agregar lámpara</h1>
+<h4>Pedido #@Model.PedidoId</h4>
 <hr />
+
 <div class="row">
-    <div class="col-md-6">
-        <form asp-action="AgregarDetalle">
+    <div class="col-md-5">
+        <form asp-action="AgregarDetalle" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="PedidoId" />
 
-            <div class="form-group mb-3">
-                <label asp-for="MaterialCampanaId" class="control-label"></label>
-                <select asp-for="MaterialCampanaId" class="form-select" asp-items="Model.Campanas">
-                    <option value="">-- Elegí una campana --</option>
+            <div class="mb-3">
+                <label asp-for="MaterialCampanaId" class="form-label"></label>
+                <select asp-for="MaterialCampanaId" asp-items="Model.Campanas" class="form-select">
+                    <option value="">-- Elegí la campaña --</option>
                 </select>
                 <span asp-validation-for="MaterialCampanaId" class="text-danger"></span>
             </div>
 
-            <div class="form-group mb-3">
-                <label asp-for="MaterialBaseId" class="control-label"></label>
-                <select asp-for="MaterialBaseId" class="form-select" asp-items="Model.Bases">
-                    <option value="">-- Elegí una base --</option>
+            <div class="mb-3">
+                <label asp-for="MaterialBaseId" class="form-label"></label>
+                <select asp-for="MaterialBaseId" asp-items="Model.Bases" class="form-select">
+                    <option value="">-- Elegí la base --</option>
                 </select>
                 <span asp-validation-for="MaterialBaseId" class="text-danger"></span>
             </div>
 
-            <div class="form-group mb-3">
-                <label asp-for="Cantidad" class="control-label"></label>
-                <input asp-for="Cantidad" class="form-control" type="number" min="1" max="100" />
+            <div class="mb-3">
+                <label asp-for="TipoLuzId" class="form-label"></label>
+                <select asp-for="TipoLuzId" asp-items="Model.TiposLuz" class="form-select">
+                    <option value="">-- Elegí el tipo de luz --</option>
+                </select>
+                <span asp-validation-for="TipoLuzId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Cantidad" class="form-label"></label>
+                <input asp-for="Cantidad" class="form-control" />
                 <span asp-validation-for="Cantidad" class="text-danger"></span>
             </div>
 
-            <div class="form-group mt-4">
-                <input type="submit" value="Agregar al pedido" class="btn btn-success" />
-                <a asp-action="Details" asp-route-id="@Model.PedidoId" class="btn btn-secondary ms-2">Cancelar</a>
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary">Agregar al pedido</button>
+                <a asp-action="Details" asp-route-id="@Model.PedidoId" class="btn btn-secondary">Volver al pedido</a>
             </div>
         </form>
     </div>

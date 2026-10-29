@@ -45,6 +45,16 @@ namespace AlmaDelMarPampeano.Data
                     new EstadoPedido { NombreEstado = "Cancelado" });
                 await context.SaveChangesAsync();
             }
+
+            // 4. Tipos de luz que ofrece la marca
+            if (!await context.TiposLuz.AnyAsync())
+            {
+                context.TiposLuz.AddRange(
+                    new TipoLuz { Nombre = "Luz fría", Descripcion = "Luz blanca, clara y neutra." },
+                    new TipoLuz { Nombre = "Luz cálida", Descripcion = "Luz amarillenta, suave y acogedora." },
+                    new TipoLuz { Nombre = "Multicolor", Descripcion = "Luz LED que cambia de color." });
+                await context.SaveChangesAsync();
+            }
         }
 
         private static async Task CrearUsuarioSiNoExiste(
