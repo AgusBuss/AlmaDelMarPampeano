@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using AlmaDelMarPampeano.Data;
 using System.Globalization;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Localization;
+using AlmaDelMarPampeano.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +27,28 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
 
 builder.Services.AddHttpContextAccessor(); // lo usa ApplicationDbContext para saber qué usuario hace cada cambio
 builder.Services.AddControllersWithViews();
+
+// Cliente HTTP tipado para el asistente de IA (Google Gemini)
+builder.Services.AddHttpClient<GeminiService>(cliente =>
+{
+    cliente.BaseAddress = new Uri("https://generativelanguage.googleapis.com/");
+    cliente.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// Límite de consultas al asistente: 8 por minuto por visitante (protege la cuota gratuita de Gemini)
+builder.Services.AddRateLimiter(opciones =>
+{
+    opciones.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    opciones.AddPolicy("chat", contexto =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            contexto.Connection.RemoteIpAddress?.ToString() ?? "desconocida",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 8,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+});
 
 var app = builder.Build();
 
@@ -70,6 +94,8 @@ else
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();

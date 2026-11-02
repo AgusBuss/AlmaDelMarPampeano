@@ -1,0 +1,34 @@
+﻿@* Chat flotante del asistente Lumi. El funcionamiento está en wwwroot/js/chatbot.js *@
+@Html.AntiForgeryToken()
+
+<button type="button" id="lumi-boton" class="lumi-boton"
+        aria-label="Abrir el chat con Lumi" aria-expanded="false" aria-controls="lumi-panel">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M9 18h6" />
+        <path d="M10 21h4" />
+        <path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" />
+    </svg>
+</button>
+
+<section id="lumi-panel" class="lumi-panel" role="dialog" aria-label="Chat con Lumi"
+         data-url="@Url.Action("Preguntar", "Chat")">
+    <header class="lumi-encabezado">
+        <div>
+            <strong>Lumi</strong>
+            <div class="small">Asistente de Alma del Mar Pampeano</div>
+        </div>
+        <button type="button" id="lumi-cerrar" class="btn-close btn-close-white" aria-label="Cerrar el chat"></button>
+    </header>
+
+    <div id="lumi-mensajes" class="lumi-mensajes" aria-live="polite"></div>
+
+    <form id="lumi-formulario" class="lumi-pie" autocomplete="off">
+        <div class="input-group">
+            <input id="lumi-entrada" type="text" class="form-control" maxlength="500"
+                   placeholder="Escribí tu pregunta..." aria-label="Tu pregunta" required />
+            <button id="lumi-enviar" class="btn btn-primary" type="submit">Enviar</button>
+        </div>
+        <div class="lumi-aviso">Lumi usa inteligencia artificial y puede equivocarse.</div>
+    </form>
+</section>
