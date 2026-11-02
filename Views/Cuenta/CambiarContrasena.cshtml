@@ -1,0 +1,44 @@
+﻿@model AlmaDelMarPampeano.ViewModels.CambiarContrasenaViewModel
+
+@{
+    ViewData["Title"] = "Cambiar contraseña";
+}
+
+<h1>Cambiar contraseña</h1>
+<hr />
+
+<div class="row">
+    <div class="col-md-5">
+        <form asp-action="CambiarContrasena" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="ContrasenaActual" class="form-label"></label>
+                <input asp-for="ContrasenaActual" class="form-control" autocomplete="current-password" />
+                <span asp-validation-for="ContrasenaActual" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ContrasenaNueva" class="form-label"></label>
+                <input asp-for="ContrasenaNueva" class="form-control" autocomplete="new-password" />
+                <span asp-validation-for="ContrasenaNueva" class="text-danger"></span>
+                <div class="form-text">Mínimo 6 caracteres, con mayúscula, minúscula, número y un símbolo.</div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ConfirmarContrasena" class="form-label"></label>
+                <input asp-for="ConfirmarContrasena" class="form-control" autocomplete="new-password" />
+                <span asp-validation-for="ConfirmarContrasena" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Cambiar contraseña</button>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

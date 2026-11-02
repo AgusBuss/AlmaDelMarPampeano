@@ -23,7 +23,8 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
     .AddRoles<IdentityRole>()
     .AddUserManager<AppUserManager>()
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddErrorDescriber<DescriptorErroresIdentity>();
 
 builder.Services.AddHttpContextAccessor(); // lo usa ApplicationDbContext para saber qué usuario hace cada cambio
 builder.Services.AddControllersWithViews();
