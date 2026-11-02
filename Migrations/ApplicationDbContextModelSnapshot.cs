@@ -108,6 +108,10 @@ namespace AlmaDelMarPampeano.Migrations
                         .HasMaxLength(80)
                         .HasColumnType("nvarchar(80)");
 
+                    b.Property<string>("RutaCuaderno")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
                     b.HasKey("Id");
 
                     b.ToTable("Colecciones");

@@ -56,25 +56,53 @@ namespace AlmaDelMarPampeano.Data
                 await context.SaveChangesAsync();
             }
 
-            // 5. Colecciones de la marca
+            // 5. Colecciones de la marca, cada una con su cuaderno en PDF (wwwroot/cuadernos)
+            const string cuadernoMar = "/cuadernos/Coleccion_I_Mar_Pampeano_Concepto.pdf";
+            const string cuadernoMonte = "/cuadernos/Coleccion_II_Alma_del_Monte.pdf";
+            const string cuadernoOeste = "/cuadernos/Coleccion_III_Arcoiris_del_Oeste_Edicion_Premium.pdf";
+
             if (!await context.Colecciones.AnyAsync())
             {
                 context.Colecciones.AddRange(
                     new Coleccion
                     {
                         Nombre = "Mar Pampeano",
-                        Descripcion = "Colección I. Yeso y lumaquela, lana hilada a mano y retortuño, con identidad azul."
+                        Descripcion = "Colección I. Yeso y lumaquela, lana hilada a mano y retortuño, con identidad azul.",
+                        RutaCuaderno = cuadernoMar
                     },
                     new Coleccion
                     {
                         Nombre = "Almas del Monte",
-                        Descripcion = "Colección II. Yeso y maderas del monte, como el caldén."
+                        Descripcion = "Colección II. Yeso y maderas del monte, como el caldén.",
+                        RutaCuaderno = cuadernoMonte
                     },
                     new Coleccion
                     {
                         Nombre = "Arcoíris del Oeste",
-                        Descripcion = "Colección III. Yeso y maderas del oeste, con LED regulable."
+                        Descripcion = "Colección III. Yeso y maderas del oeste, con LED regulable.",
+                        RutaCuaderno = cuadernoOeste
                     });
+                await context.SaveChangesAsync();
+            }
+            else
+            {
+                // Bases que ya existían antes de agregar el campo: se les completa la ruta del cuaderno
+                var rutasPorNombre = new Dictionary<string, string>
+                {
+                    ["Mar Pampeano"] = cuadernoMar,
+                    ["Almas del Monte"] = cuadernoMonte,
+                    ["Arcoíris del Oeste"] = cuadernoOeste
+                };
+
+                var colecciones = await context.Colecciones.ToListAsync();
+                foreach (var coleccion in colecciones)
+                {
+                    if (string.IsNullOrEmpty(coleccion.RutaCuaderno) &&
+                        rutasPorNombre.TryGetValue(coleccion.Nombre, out var ruta))
+                    {
+                        coleccion.RutaCuaderno = ruta;
+                    }
+                }
                 await context.SaveChangesAsync();
             }
         }

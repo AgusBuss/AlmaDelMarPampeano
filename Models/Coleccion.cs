@@ -14,5 +14,9 @@ namespace AlmaDelMarPampeano.Models
         [StringLength(500, ErrorMessage = "La descripción no puede superar los 500 caracteres.")]
         [Display(Name = "Descripción")]
         public string? Descripcion { get; set; }
+
+        [StringLength(300)]
+        [Display(Name = "Cuaderno (PDF)")]
+        public string? RutaCuaderno { get; set; }
     }
 }

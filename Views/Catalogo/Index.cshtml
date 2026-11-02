@@ -1,0 +1,167 @@
+﻿@model AlmaDelMarPampeano.ViewModels.CatalogoViewModel
+
+@{
+    ViewData["Title"] = "Catálogo";
+    var seleccionada = Model.Colecciones.FirstOrDefault(c => c.Id == Model.ColeccionId);
+}
+
+<h1 class="mb-3">Catálogo</h1>
+
+@* Pestañas: una por colección, cada una con su propio link *@
+<ul class="nav nav-pills mb-4">
+    <li class="nav-item">
+        <a class="nav-link @(Model.ColeccionId == null ? "active" : "")" asp-action="Index">Todas</a>
+    </li>
+    @foreach (var coleccion in Model.Colecciones)
+    {
+        <li class="nav-item">
+            <a class="nav-link @(Model.ColeccionId == coleccion.Id ? "active" : "")"
+               asp-action="Index" asp-route-coleccionId="@coleccion.Id">@coleccion.Nombre</a>
+        </li>
+    }
+</ul>
+
+@if (seleccionada != null)
+{
+    @* Colección elegida: su descripción y su cuaderno en PDF *@
+    <div class="card mb-4">
+        <div class="card-body">
+            <h2 class="h4">@seleccionada.Nombre</h2>
+            @if (!string.IsNullOrEmpty(seleccionada.Descripcion))
+            {
+                <p>@seleccionada.Descripcion</p>
+            }
+            @if (!string.IsNullOrEmpty(seleccionada.RutaCuaderno))
+            {
+                <a href="@seleccionada.RutaCuaderno" target="_blank" rel="noopener" class="btn btn-outline-primary me-2">Ver cuaderno</a>
+                <a href="@seleccionada.RutaCuaderno" download class="btn btn-primary">Descargar PDF</a>
+            }
+        </div>
+    </div>
+}
+else
+{
+    @* Vista "Todas": acceso a los tres cuadernos *@
+    var conCuaderno = Model.Colecciones.Where(c => !string.IsNullOrEmpty(c.RutaCuaderno)).ToList();
+    if (conCuaderno.Any())
+    {
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="h5">Cuadernos de colección</h2>
+                <p class="text-muted small">Cada colección tiene su cuaderno con la historia y los materiales de sus piezas.</p>
+                <ul class="list-group list-group-flush">
+                    @foreach (var c in conCuaderno)
+                    {
+                        <li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2 px-0">
+                            <span>@c.Nombre</span>
+                            <span>
+                                <a href="@c.RutaCuaderno" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">Ver</a>
+                                <a href="@c.RutaCuaderno" download class="btn btn-sm btn-primary">Descargar</a>
+                            </span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    }
+}
+
+@if (!Model.Lamparas.Any())
+{
+    <div class="alert alert-info">Todavía no hay lámparas cargadas en esta colección.</div>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        @foreach (var lampara in Model.Lamparas)
+        {
+            var fotos = lampara.Fotos.OrderBy(f => f.Orden).ToList();
+            var idCarrusel = $"carrusel-{lampara.Id}";
+
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+
+                    @if (fotos.Count > 1)
+                    {
+                        @* Pasarela de fotos: flechas y puntitos para pasar entre ellas *@
+                        <div id="@idCarrusel" class="carousel slide" data-bs-interval="false">
+                            <div class="carousel-indicators">
+                                @for (var i = 0; i < fotos.Count; i++)
+                                {
+                                    <button type="button" data-bs-target="#@idCarrusel" data-bs-slide-to="@i"
+                                            class="@(i == 0 ? "active" : "")" aria-label="Foto @(i + 1)"></button>
+                                }
+                            </div>
+                            <div class="carousel-inner">
+                                @for (var i = 0; i < fotos.Count; i++)
+                                {
+                                    <div class="carousel-item @(i == 0 ? "active" : "")">
+                                        <img src="@fotos[i].RutaArchivo" class="d-block w-100"
+                                             style="height:280px;object-fit:cover;"
+                                             alt="@lampara.Nombre, foto @(i + 1)" />
+                                    </div>
+                                }
+                            </div>
+                            <button class="carousel-control-prev" type="button" data-bs-target="#@idCarrusel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Foto anterior</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#@idCarrusel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Foto siguiente</span>
+                            </button>
+                        </div>
+                    }
+                    else if (fotos.Count == 1)
+                    {
+                        <img src="@fotos[0].RutaArchivo" class="card-img-top"
+                             style="height:280px;object-fit:cover;" alt="@lampara.Nombre" />
+                    }
+                    else
+                    {
+                        <div class="bg-light text-muted d-flex align-items-center justify-content-center"
+                             style="height:280px;">
+                            Sin fotos
+                        </div>
+                    }
+
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <h3 class="h5 card-title mb-1">@lampara.Nombre</h3>
+                            @if (lampara.Disponible)
+                            {
+                                <span class="badge bg-success">Disponible</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Vendida</span>
+                            }
+                        </div>
+
+                        <p class="text-muted small mb-2">
+                            @if (lampara.NumeroPieza != null)
+                            {
+                                <text>Pieza N.º @lampara.NumeroPieza · </text>
+                            }
+                            @lampara.Coleccion?.Nombre
+                        </p>
+
+                        <p class="small mb-2">
+                            <strong>Campana:</strong> @(lampara.MaterialCampana?.Nombre ?? "—")<br />
+                            <strong>Base:</strong> @(lampara.MaterialBase?.TipoMaterial ?? "—")
+                        </p>
+
+                        @if (!string.IsNullOrWhiteSpace(lampara.Descripcion))
+                        {
+                            <p class="card-text">@lampara.Descripcion</p>
+                        }
+                    </div>
+
+                    <div class="card-footer bg-transparent">
+                        <span class="fs-5 fw-semibold">$ @lampara.Precio.ToString("N2")</span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
