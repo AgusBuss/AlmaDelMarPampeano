@@ -27,3 +27,19 @@ document.addEventListener('submit', function (evento) {
         }
     });
 });
+
+// Validación de números con coma decimal (es-AR) para jQuery Validation.
+// Va dentro de $(function) porque la librería de validación se carga después de este archivo.
+$(function () {
+    if (!$.validator) return;
+
+    $.validator.methods.number = function (value, element) {
+        return this.optional(element) ||
+            /^-?(?:\d+|\d{1,3}(?:\.\d{3})+)(?:,\d+)?$/.test(value);
+    };
+
+    $.validator.methods.range = function (value, element, param) {
+        var numero = parseFloat(String(value).replace(/\./g, '').replace(',', '.'));
+        return this.optional(element) || (numero >= Number(param[0]) && numero <= Number(param[1]));
+    };
+});

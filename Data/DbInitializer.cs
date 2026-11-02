@@ -55,6 +55,28 @@ namespace AlmaDelMarPampeano.Data
                     new TipoLuz { Nombre = "Multicolor", Descripcion = "Luz LED que cambia de color." });
                 await context.SaveChangesAsync();
             }
+
+            // 5. Colecciones de la marca
+            if (!await context.Colecciones.AnyAsync())
+            {
+                context.Colecciones.AddRange(
+                    new Coleccion
+                    {
+                        Nombre = "Mar Pampeano",
+                        Descripcion = "Colección I. Yeso y lumaquela, lana hilada a mano y retortuño, con identidad azul."
+                    },
+                    new Coleccion
+                    {
+                        Nombre = "Almas del Monte",
+                        Descripcion = "Colección II. Yeso y maderas del monte, como el caldén."
+                    },
+                    new Coleccion
+                    {
+                        Nombre = "Arcoíris del Oeste",
+                        Descripcion = "Colección III. Yeso y maderas del oeste, con LED regulable."
+                    });
+                await context.SaveChangesAsync();
+            }
         }
 
         private static async Task CrearUsuarioSiNoExiste(

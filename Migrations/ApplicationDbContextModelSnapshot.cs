@@ -91,6 +91,28 @@ namespace AlmaDelMarPampeano.Migrations
                     b.ToTable("Auditorias");
                 });
 
+            modelBuilder.Entity("AlmaDelMarPampeano.Models.Coleccion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Colecciones");
+                });
+
             modelBuilder.Entity("AlmaDelMarPampeano.Models.DetallePedido", b =>
                 {
                     b.Property<int>("Id")
@@ -142,6 +164,78 @@ namespace AlmaDelMarPampeano.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("EstadosPedido");
+                });
+
+            modelBuilder.Entity("AlmaDelMarPampeano.Models.FotoLampara", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("LamparaId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RutaArchivo")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LamparaId");
+
+                    b.ToTable("FotosLampara");
+                });
+
+            modelBuilder.Entity("AlmaDelMarPampeano.Models.Lampara", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ColeccionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("Disponible")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("MaterialBaseId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("MaterialCampanaId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("NumeroPieza")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Precio")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ColeccionId");
+
+                    b.HasIndex("MaterialBaseId");
+
+                    b.HasIndex("MaterialCampanaId");
+
+                    b.ToTable("Lamparas");
                 });
 
             modelBuilder.Entity("AlmaDelMarPampeano.Models.MaterialBase", b =>
@@ -493,6 +587,41 @@ namespace AlmaDelMarPampeano.Migrations
                     b.Navigation("TipoLuz");
                 });
 
+            modelBuilder.Entity("AlmaDelMarPampeano.Models.FotoLampara", b =>
+                {
+                    b.HasOne("AlmaDelMarPampeano.Models.Lampara", "Lampara")
+                        .WithMany("Fotos")
+                        .HasForeignKey("LamparaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Lampara");
+                });
+
+            modelBuilder.Entity("AlmaDelMarPampeano.Models.Lampara", b =>
+                {
+                    b.HasOne("AlmaDelMarPampeano.Models.Coleccion", "Coleccion")
+                        .WithMany()
+                        .HasForeignKey("ColeccionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AlmaDelMarPampeano.Models.MaterialBase", "MaterialBase")
+                        .WithMany()
+                        .HasForeignKey("MaterialBaseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AlmaDelMarPampeano.Models.MaterialCampana", "MaterialCampana")
+                        .WithMany()
+                        .HasForeignKey("MaterialCampanaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Coleccion");
+
+                    b.Navigation("MaterialBase");
+
+                    b.Navigation("MaterialCampana");
+                });
+
             modelBuilder.Entity("AlmaDelMarPampeano.Models.Pedido", b =>
                 {
                     b.HasOne("AlmaDelMarPampeano.Models.EstadoPedido", "EstadoPedido")
@@ -553,6 +682,11 @@ namespace AlmaDelMarPampeano.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("AlmaDelMarPampeano.Models.Lampara", b =>
+                {
+                    b.Navigation("Fotos");
                 });
 
             modelBuilder.Entity("AlmaDelMarPampeano.Models.Pedido", b =>

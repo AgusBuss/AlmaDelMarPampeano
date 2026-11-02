@@ -1,0 +1,22 @@
+﻿@model AlmaDelMarPampeano.ViewModels.LamparaFormViewModel
+
+@{
+    ViewData["Title"] = "Editar lámpara";
+}
+
+<h1>Editar lámpara</h1>
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Edit" method="post" enctype="multipart/form-data">
+            <partial name="_Campos" model="Model" />
+            <button type="submit" class="btn btn-primary">Guardar cambios</button>
+            <a asp-action="Index" class="btn btn-secondary">Volver</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

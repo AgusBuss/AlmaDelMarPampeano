@@ -17,7 +17,7 @@ namespace AlmaDelMarPampeano.Data
             _httpContextAccessor = httpContextAccessor;
         }
 
-        // Nuestras 7 tablas de dominio
+        // Nuestras tablas de dominio (además de las de Identity)
         public DbSet<MaterialCampana> MaterialesCampana { get; set; }
         public DbSet<MaterialBase> MaterialesBase { get; set; }
         public DbSet<EstadoPedido> EstadosPedido { get; set; }
@@ -26,6 +26,9 @@ namespace AlmaDelMarPampeano.Data
         public DbSet<ArchivoAdjunto> ArchivosAdjuntos { get; set; }
         public DbSet<Auditoria> Auditorias { get; set; }
         public DbSet<TipoLuz> TiposLuz { get; set; }
+        public DbSet<Lampara> Lamparas { get; set; }
+        public DbSet<Coleccion> Colecciones { get; set; }
+        public DbSet<FotoLampara> FotosLampara { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -56,6 +59,31 @@ namespace AlmaDelMarPampeano.Data
                 .WithMany()
                 .HasForeignKey(d => d.TipoLuzId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Lampara>()
+                .HasOne(l => l.MaterialCampana)
+                .WithMany()
+                .HasForeignKey(l => l.MaterialCampanaId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Lampara>()
+                .HasOne(l => l.Coleccion)
+                .WithMany()
+                .HasForeignKey(l => l.ColeccionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Lampara>()
+                .HasOne(l => l.MaterialBase)
+                .WithMany()
+                .HasForeignKey(l => l.MaterialBaseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Las fotos pertenecen a la lámpara: si se borra la lámpara, se borran sus fotos
+            builder.Entity<FotoLampara>()
+                .HasOne(f => f.Lampara)
+                .WithMany(l => l.Fotos)
+                .HasForeignKey(f => f.LamparaId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
 
         // ------------------------------------------------------------------
@@ -72,7 +100,9 @@ namespace AlmaDelMarPampeano.Data
             { typeof(MaterialCampana), "Campana" },
             { typeof(MaterialBase), "Base" },
             { typeof(EstadoPedido), "Estado de pedido" },
-            { typeof(TipoLuz), "Tipo de luz" }
+            { typeof(TipoLuz), "Tipo de luz" },
+            { typeof(Lampara), "Lámpara" },
+            { typeof(Coleccion), "Colección" }
         };
 
         private sealed record CambioPendiente(

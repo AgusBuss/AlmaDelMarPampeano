@@ -1,0 +1,94 @@
+﻿@model AlmaDelMarPampeano.ViewModels.LamparaFormViewModel
+
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<input type="hidden" asp-for="Id" />
+
+<div class="mb-3">
+    <label asp-for="Nombre" class="form-label"></label>
+    <input asp-for="Nombre" class="form-control" />
+    <span asp-validation-for="Nombre" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Descripcion" class="form-label"></label>
+    <textarea asp-for="Descripcion" class="form-control" rows="4"></textarea>
+    <span asp-validation-for="Descripcion" class="text-danger"></span>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label asp-for="NumeroPieza" class="form-label"></label>
+        <input asp-for="NumeroPieza" class="form-control" />
+        <span asp-validation-for="NumeroPieza" class="text-danger"></span>
+    </div>
+    <div class="col-md-6 mb-3">
+        <label asp-for="Precio" class="form-label"></label>
+        <input asp-for="Precio" class="form-control" />
+        <span asp-validation-for="Precio" class="text-danger"></span>
+    </div>
+</div>
+
+<div class="mb-3">
+    <label asp-for="ColeccionId" class="form-label"></label>
+    <select asp-for="ColeccionId" asp-items="Model.Colecciones" class="form-select">
+        <option value="">-- Elegí la colección --</option>
+    </select>
+    <span asp-validation-for="ColeccionId" class="text-danger"></span>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label asp-for="MaterialCampanaId" class="form-label"></label>
+        <select asp-for="MaterialCampanaId" asp-items="Model.Campanas" class="form-select">
+            <option value="">-- Elegí la campana --</option>
+        </select>
+        <span asp-validation-for="MaterialCampanaId" class="text-danger"></span>
+    </div>
+    <div class="col-md-6 mb-3">
+        <label asp-for="MaterialBaseId" class="form-label"></label>
+        <select asp-for="MaterialBaseId" asp-items="Model.Bases" class="form-select">
+            <option value="">-- Elegí la base --</option>
+        </select>
+        <span asp-validation-for="MaterialBaseId" class="text-danger"></span>
+    </div>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Imagenes" class="form-label"></label>
+
+    @if (Model.FotosActuales.Any())
+    {
+        <div class="row g-2 mb-2">
+            @foreach (var item in Model.FotosActuales.Select((foto, indice) => new { foto, indice }))
+            {
+                <div class="col-6 col-md-3">
+                    <div class="card h-100">
+                        <img src="@item.foto.RutaArchivo" class="card-img-top" alt="Foto @(item.indice + 1)"
+                             style="height:100px;object-fit:cover;" />
+                        <div class="card-body p-2">
+                            @if (item.indice == 0)
+                            {
+                                <span class="badge bg-primary mb-1">Portada</span>
+                            }
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="FotosAEliminar"
+                                       value="@item.foto.Id" id="quitar-@item.foto.Id" />
+                                <label class="form-check-label small" for="quitar-@item.foto.Id">Quitar</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="form-text mb-2">La primera foto es la portada. Marcá "Quitar" en las que quieras eliminar al guardar.</div>
+    }
+
+    <input asp-for="Imagenes" type="file" class="form-control" accept=".jpg,.jpeg,.png" multiple />
+    <div class="form-text">Podés elegir varias fotos a la vez. JPG o PNG, hasta 5 MB cada una y 8 por lámpara.</div>
+    <span asp-validation-for="Imagenes" class="text-danger"></span>
+</div>
+
+<div class="form-check mb-3">
+    <input asp-for="Disponible" class="form-check-input" />
+    <label asp-for="Disponible" class="form-check-label"></label>
+</div>

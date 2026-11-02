@@ -1,0 +1,71 @@
+﻿@model IEnumerable<AlmaDelMarPampeano.Models.Lampara>
+
+@{
+    ViewData["Title"] = "Lámparas del catálogo";
+}
+
+<h1>Lámparas del catálogo</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Agregar lámpara</a>
+</p>
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Portada</th>
+                <th>N.º de pieza</th>
+                <th>Nombre</th>
+                <th>Colección</th>
+                <th>Campana</th>
+                <th>Base</th>
+                <th>Precio</th>
+                <th>Estado</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                var portada = item.Fotos.OrderBy(f => f.Orden).FirstOrDefault();
+                <tr>
+                    <td>
+                        @if (portada != null)
+                        {
+                            <img src="@portada.RutaArchivo" alt="@item.Nombre" style="width:70px;height:70px;object-fit:cover;" class="rounded" />
+                            <div class="small text-muted">@item.Fotos.Count @(item.Fotos.Count == 1 ? "foto" : "fotos")</div>
+                        }
+                        else
+                        {
+                            <span class="text-muted">Sin fotos</span>
+                        }
+                    </td>
+                    <td>@(item.NumeroPieza?.ToString() ?? "—")</td>
+                    <td>@item.Nombre</td>
+                    <td>@(item.Coleccion?.Nombre ?? "—")</td>
+                    <td>@(item.MaterialCampana?.Nombre ?? "—")</td>
+                    <td>@(item.MaterialBase?.TipoMaterial ?? "—")</td>
+                    <td>$ @item.Precio.ToString("N2")</td>
+                    <td>
+                        @if (item.Disponible)
+                        {
+                            <span class="badge bg-success">Disponible</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Vendida</span>
+                        }
+                    </td>
+                    <td class="text-nowrap">
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Editar</a>
+                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline form-eliminar"
+                              data-mensaje="Se va a eliminar la lámpara &quot;@item.Nombre&quot; y todas sus fotos.">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Borrar</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

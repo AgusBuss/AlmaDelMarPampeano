@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using AlmaDelMarPampeano.Data;
+using System.Globalization;
+using Microsoft.AspNetCore.Localization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,7 +28,16 @@ builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-// --- INICIO: migraciones + datos iniciales (roles, usuarios de prueba, estados) ---
+// Cultura fija es-AR: coma decimal y formatos argentinos, en cualquier servidor
+var culturaAr = new CultureInfo("es-AR");
+app.UseRequestLocalization(new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture(culturaAr),
+    SupportedCultures = new List<CultureInfo> { culturaAr },
+    SupportedUICultures = new List<CultureInfo> { culturaAr }
+});
+
+// --- INICIO: migraciones + datos iniciales (roles, usuarios de prueba, estados, tipos de luz, colecciones) ---
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -34,7 +45,7 @@ using (var scope = app.Services.CreateScope())
     {
         var db = services.GetRequiredService<ApplicationDbContext>();
         await db.Database.MigrateAsync();          // crea/actualiza la base si hace falta
-        await DbInitializer.Initialize(services);  // roles, admin, cliente de prueba y estados
+        await DbInitializer.Initialize(services);  // roles, usuarios de prueba y datos iniciales
     }
     catch (Exception ex)
     {
