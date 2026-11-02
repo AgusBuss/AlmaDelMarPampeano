@@ -488,3 +488,4 @@ app.db
 # Archivos subidos por los usuarios
 wwwroot/adjuntos/
 appsettings.Production.json
+*.pubxml
