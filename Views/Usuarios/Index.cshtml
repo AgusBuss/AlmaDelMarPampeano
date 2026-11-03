@@ -1,0 +1,45 @@
+﻿@model IEnumerable<AlmaDelMarPampeano.ViewModels.UsuarioListaViewModel>
+
+@{
+    ViewData["Title"] = "Usuarios";
+}
+
+<h1 class="mb-3">Usuarios</h1>
+
+<p class="text-muted">
+    Si un cliente olvidó su contraseña, asignale una temporal y pasásela por WhatsApp o en persona.
+    Después puede cambiarla desde "Cambiar contraseña".
+</p>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Rol</th>
+                <th class="text-end">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in Model)
+            {
+                <tr>
+                    <td>@u.Email</td>
+                    <td>@u.Rol</td>
+                    <td class="text-end">
+                        @if (u.Rol.Contains("Administrador"))
+                        {
+                            <span class="text-muted small">Usa "Cambiar contraseña"</span>
+                        }
+                        else
+                        {
+                            <a asp-action="Restablecer" asp-route-id="@u.Id" class="btn btn-sm btn-outline-primary">
+                                Restablecer contraseña
+                            </a>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
