@@ -1,38 +1,124 @@
-﻿.lumi-boton {
+﻿/* ===== Lumi: asistente de Alma del Mar Pampeano ===== */
+
+.lumi-boton {
     position: fixed;
     right: 1.25rem;
     bottom: 1.25rem;
     z-index: 1080;
-    width: 60px;
-    height: 60px;
-    border: 0;
+    width: 68px;
+    height: 68px;
+    padding: 0;
+    border: 2px solid var(--ap-azul, #0F1E2E);
     border-radius: 50%;
-    background: #0d6efd;
-    color: #fff;
+    background: var(--ap-blanco, #FAF8F3);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, .3);
+    box-shadow: 0 4px 14px rgba(15, 30, 46, .3);
     cursor: pointer;
+    animation: lumi-brillo 4.5s ease-in-out infinite;
+    transition: transform .15s;
 }
 
     .lumi-boton:hover {
-        background: #0b5ed7;
+        transform: scale(1.06);
     }
 
+    .lumi-boton img {
+        width: 48px;
+        height: auto;
+        display: block;
+    }
+
+/* Brillo dorado suave que pulsa de vez en cuando */
+@keyframes lumi-brillo {
+    0%, 100% {
+        box-shadow: 0 4px 14px rgba(15, 30, 46, .3), 0 0 0 0 rgba(217, 162, 76, 0);
+    }
+
+    50% {
+        box-shadow: 0 4px 14px rgba(15, 30, 46, .3), 0 0 0 10px rgba(217, 162, 76, .28);
+    }
+}
+
+/* Cartelito que aparece unos segundos y se va solo */
+.lumi-cartel {
+    position: fixed;
+    right: 5.9rem;
+    bottom: 2rem;
+    z-index: 1080;
+    padding: .45rem .8rem;
+    background: var(--ap-blanco, #FAF8F3);
+    color: var(--ap-azul, #0F1E2E);
+    border: 1px solid var(--ap-arena, #E7DCC6);
+    border-radius: .75rem;
+    font-size: .85rem;
+    box-shadow: 0 3px 10px rgba(15, 30, 46, .15);
+    pointer-events: none;
+    animation: lumi-cartel 12s ease 2s both;
+}
+
+    .lumi-cartel::after {
+        content: "";
+        position: absolute;
+        right: -6px;
+        bottom: 12px;
+        width: 10px;
+        height: 10px;
+        background: var(--ap-blanco, #FAF8F3);
+        border-right: 1px solid var(--ap-arena, #E7DCC6);
+        border-top: 1px solid var(--ap-arena, #E7DCC6);
+        transform: rotate(45deg);
+    }
+
+@keyframes lumi-cartel {
+    0% {
+        opacity: 0;
+        transform: translateY(6px);
+        visibility: visible;
+    }
+
+    8%, 85% {
+        opacity: 1;
+        transform: translateY(0);
+        visibility: visible;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(0);
+        visibility: hidden;
+    }
+}
+
+.lumi-boton[aria-expanded="true"] ~ .lumi-cartel {
+    display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lumi-boton, .lumi-cartel {
+        animation: none;
+    }
+
+    .lumi-cartel {
+        display: none;
+    }
+}
+
+/* ===== Panel de chat ===== */
 .lumi-panel {
     position: fixed;
     right: 1.25rem;
-    bottom: 5.5rem;
+    bottom: 6.25rem;
     z-index: 1080;
-    width: min(360px, calc(100vw - 2.5rem));
-    height: min(480px, calc(100vh - 8rem));
+    width: min(370px, calc(100vw - 2.5rem));
+    height: min(500px, calc(100vh - 9rem));
     display: none;
     flex-direction: column;
-    background: #fff;
-    border: 1px solid rgba(0, 0, 0, .12);
-    border-radius: .75rem;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, .25);
+    background: var(--ap-blanco, #FAF8F3);
+    border: 1px solid var(--ap-arena, #E7DCC6);
+    border-radius: .9rem;
+    box-shadow: 0 8px 30px rgba(15, 30, 46, .28);
     overflow: hidden;
 }
 
@@ -44,16 +130,43 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: .75rem 1rem;
-    background: #0d6efd;
-    color: #fff;
+    gap: .75rem;
+    padding: .65rem 1rem;
+    background: var(--ap-azul, #0F1E2E);
+    color: var(--ap-yeso, #F4EFE6);
 }
+
+.lumi-identidad {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+}
+
+    .lumi-identidad img {
+        width: 44px;
+        height: auto;
+        padding: 4px;
+        background: var(--ap-blanco, #FAF8F3);
+        border-radius: 50%;
+    }
+
+    .lumi-identidad strong {
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-size: 1.3rem;
+        font-weight: 600;
+        line-height: 1;
+    }
+
+    .lumi-identidad .small {
+        color: var(--ap-arena, #E7DCC6);
+        font-size: .74rem;
+    }
 
 .lumi-mensajes {
     flex: 1;
     overflow-y: auto;
-    padding: .75rem;
-    background: #f8f9fa;
+    padding: .85rem;
+    background: var(--ap-yeso, #F4EFE6);
 }
 
 .lumi-burbuja {
@@ -68,31 +181,32 @@
 
     .lumi-burbuja.usuario {
         margin-left: auto;
-        background: #0d6efd;
-        color: #fff;
+        background: var(--ap-azul, #0F1E2E);
+        color: var(--ap-yeso, #F4EFE6);
         border-bottom-right-radius: .2rem;
     }
 
     .lumi-burbuja.asistente {
-        background: #fff;
-        border: 1px solid #dee2e6;
+        background: var(--ap-blanco, #FAF8F3);
+        color: var(--ap-gris-oscuro, #3F3F3F);
+        border: 1px solid var(--ap-arena, #E7DCC6);
         border-bottom-left-radius: .2rem;
     }
 
     .lumi-burbuja.escribiendo {
-        color: #6c757d;
+        color: var(--ap-tierra, #5A452B);
         font-style: italic;
     }
 
 .lumi-pie {
     padding: .5rem;
-    background: #fff;
-    border-top: 1px solid #dee2e6;
+    background: var(--ap-blanco, #FAF8F3);
+    border-top: 1px solid var(--ap-arena, #E7DCC6);
 }
 
 .lumi-aviso {
     padding-top: .25rem;
     font-size: .7rem;
-    color: #6c757d;
+    color: var(--ap-tierra, #5A452B);
     text-align: center;
 }

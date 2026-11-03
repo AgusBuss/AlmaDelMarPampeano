@@ -1,0 +1,11 @@
+﻿@model string
+
+@{
+    var n = (Model ?? "").ToLowerInvariant();
+    var clase = n.Contains("produc") ? "estado-produccion"
+              : n.Contains("termin") ? "estado-terminado"
+              : n.Contains("entreg") ? "estado-entregado"
+              : n.Contains("cancel") ? "estado-cancelado"
+              : "estado-pendiente";
+}
+<span class="estado @clase">@(string.IsNullOrEmpty(Model) ? "—" : Model)</span>

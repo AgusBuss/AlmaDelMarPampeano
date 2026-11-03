@@ -128,6 +128,9 @@ namespace AlmaDelMarPampeano.Migrations
                     b.Property<int>("Cantidad")
                         .HasColumnType("int");
 
+                    b.Property<int?>("LamparaId")
+                        .HasColumnType("int");
+
                     b.Property<int>("MaterialBaseId")
                         .HasColumnType("int");
 
@@ -141,6 +144,8 @@ namespace AlmaDelMarPampeano.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("LamparaId");
 
                     b.HasIndex("MaterialBaseId");
 
@@ -559,6 +564,11 @@ namespace AlmaDelMarPampeano.Migrations
 
             modelBuilder.Entity("AlmaDelMarPampeano.Models.DetallePedido", b =>
                 {
+                    b.HasOne("AlmaDelMarPampeano.Models.Lampara", "Lampara")
+                        .WithMany()
+                        .HasForeignKey("LamparaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("AlmaDelMarPampeano.Models.MaterialBase", "MaterialBase")
                         .WithMany()
                         .HasForeignKey("MaterialBaseId")
@@ -581,6 +591,8 @@ namespace AlmaDelMarPampeano.Migrations
                         .WithMany()
                         .HasForeignKey("TipoLuzId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Lampara");
 
                     b.Navigation("MaterialBase");
 

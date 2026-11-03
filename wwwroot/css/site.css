@@ -29,3 +29,517 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+/* ===== Identidad Alma del Mar Pampeano ===== */
+:root {
+    --ap-azul: #0F1E2E;
+    --ap-ocre: #B67C2E;
+    --ap-arena: #E7DCC6;
+    --ap-tierra: #5A452B;
+    --ap-luz: #D9A24C;
+    --ap-yeso: #F4EFE6;
+    --ap-blanco: #FAF8F3;
+    --ap-gris-claro: #E6E3DE;
+    --ap-gris-oscuro: #3F3F3F;
+    --bs-body-bg: var(--ap-yeso);
+    --bs-body-color: var(--ap-gris-oscuro);
+    --bs-body-font-family: 'Lato', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --bs-border-color: var(--ap-arena);
+}
+
+body {
+    background-color: var(--ap-yeso);
+    color: var(--ap-gris-oscuro);
+}
+
+h1, h2, h3, h4, .navbar-brand {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    color: var(--ap-azul);
+    font-weight: 600;
+}
+
+a {
+    color: var(--ap-tierra);
+}
+
+    a:hover {
+        color: var(--ap-ocre);
+    }
+
+/* Botón principal: azul con texto claro (buen contraste) */
+.btn-primary {
+    --bs-btn-bg: var(--ap-azul);
+    --bs-btn-border-color: var(--ap-azul);
+    --bs-btn-hover-bg: var(--ap-tierra);
+    --bs-btn-hover-border-color: var(--ap-tierra);
+    --bs-btn-active-bg: var(--ap-tierra);
+    --bs-btn-active-border-color: var(--ap-tierra);
+    --bs-btn-disabled-bg: var(--ap-azul);
+    --bs-btn-disabled-border-color: var(--ap-azul);
+}
+
+.btn-outline-primary {
+    --bs-btn-color: var(--ap-azul);
+    --bs-btn-border-color: var(--ap-azul);
+    --bs-btn-hover-bg: var(--ap-azul);
+    --bs-btn-hover-border-color: var(--ap-azul);
+    --bs-btn-active-bg: var(--ap-azul);
+    --bs-btn-active-border-color: var(--ap-azul);
+}
+
+.card {
+    background-color: var(--ap-blanco);
+    border-color: var(--ap-arena);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--ap-ocre);
+    box-shadow: 0 0 0 .25rem rgba(182, 124, 46, .25);
+}
+
+/* ===== Navbar ===== */
+.navbar {
+    background-color: var(--ap-blanco) !important;
+    border-bottom: 1px solid var(--ap-arena) !important;
+    box-shadow: none !important;
+}
+
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    font-size: 1.35rem;
+    line-height: 1.1;
+}
+
+    .navbar-brand img {
+        height: 42px;
+        width: auto;
+    }
+
+    .navbar-brand .marca-sub {
+        display: block;
+        font-family: 'Lato', sans-serif;
+        font-size: .62rem;
+        letter-spacing: .35em;
+        color: var(--ap-ocre);
+        font-weight: 700;
+    }
+
+.navbar .nav-link {
+    color: var(--ap-azul) !important;
+}
+
+    .navbar .nav-link:hover {
+        color: var(--ap-ocre) !important;
+    }
+
+/* ===== Color primario de Bootstrap = identidad de la marca ===== */
+:root {
+    --bs-primary: #0F1E2E;
+    --bs-primary-rgb: 15, 30, 46;
+    --bs-link-color: #5A452B;
+    --bs-link-color-rgb: 90, 69, 43;
+    --bs-link-hover-color: #B67C2E;
+    --bs-link-hover-color-rgb: 182, 124, 46;
+}
+
+/* Pills de colecciones del catálogo y otras pestañas activas */
+.nav-pills {
+    --bs-nav-pills-link-active-bg: var(--ap-azul);
+    --bs-nav-pills-link-active-color: var(--ap-yeso);
+}
+
+    .nav-pills .nav-link {
+        color: var(--ap-azul);
+    }
+
+        .nav-pills .nav-link:hover {
+            color: var(--ap-ocre);
+        }
+
+        .nav-pills .nav-link.active:hover {
+            color: var(--ap-yeso);
+        }
+
+/* Checkboxes, radios y switches tildados */
+.form-check-input:checked {
+    background-color: var(--ap-azul);
+    border-color: var(--ap-azul);
+}
+
+.form-check-input:focus {
+    border-color: var(--ap-ocre);
+    box-shadow: 0 0 0 .25rem rgba(182, 124, 46, .25);
+}
+
+/* Botones secundarios y de información, más sobrios */
+.btn-outline-secondary {
+    --bs-btn-color: var(--ap-tierra);
+    --bs-btn-border-color: var(--ap-tierra);
+    --bs-btn-hover-bg: var(--ap-tierra);
+    --bs-btn-hover-border-color: var(--ap-tierra);
+    --bs-btn-hover-color: var(--ap-yeso);
+    --bs-btn-active-bg: var(--ap-tierra);
+    --bs-btn-active-border-color: var(--ap-tierra);
+}
+
+.btn-info {
+    --bs-btn-bg: var(--ap-ocre);
+    --bs-btn-border-color: var(--ap-ocre);
+    --bs-btn-color: #fff;
+    --bs-btn-hover-bg: var(--ap-tierra);
+    --bs-btn-hover-border-color: var(--ap-tierra);
+    --bs-btn-hover-color: #fff;
+}
+
+.btn-outline-info {
+    --bs-btn-color: var(--ap-ocre);
+    --bs-btn-border-color: var(--ap-ocre);
+    --bs-btn-hover-bg: var(--ap-ocre);
+    --bs-btn-hover-border-color: var(--ap-ocre);
+    --bs-btn-hover-color: #fff;
+}
+
+/* ===== Botones de confirmar / eliminar con la paleta de la marca ===== */
+.btn-success {
+    --bs-btn-bg: #5F7050;
+    --bs-btn-border-color: #5F7050;
+    --bs-btn-color: #fff;
+    --bs-btn-hover-bg: #4C5A40;
+    --bs-btn-hover-border-color: #4C5A40;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-active-bg: #4C5A40;
+    --bs-btn-active-border-color: #4C5A40;
+    --bs-btn-disabled-bg: #5F7050;
+    --bs-btn-disabled-border-color: #5F7050;
+}
+
+.btn-outline-success {
+    --bs-btn-color: #5F7050;
+    --bs-btn-border-color: #5F7050;
+    --bs-btn-hover-bg: #5F7050;
+    --bs-btn-hover-border-color: #5F7050;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-active-bg: #5F7050;
+    --bs-btn-active-border-color: #5F7050;
+}
+
+.btn-danger {
+    --bs-btn-bg: #A63D2F;
+    --bs-btn-border-color: #A63D2F;
+    --bs-btn-color: #fff;
+    --bs-btn-hover-bg: #85301F;
+    --bs-btn-hover-border-color: #85301F;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-active-bg: #85301F;
+    --bs-btn-active-border-color: #85301F;
+}
+
+.btn-outline-danger {
+    --bs-btn-color: #A63D2F;
+    --bs-btn-border-color: #A63D2F;
+    --bs-btn-hover-bg: #A63D2F;
+    --bs-btn-hover-border-color: #A63D2F;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-active-bg: #A63D2F;
+    --bs-btn-active-border-color: #A63D2F;
+}
+
+/* ===== Tablas: encabezado en Azul Pampeano ===== */
+.table-dark {
+    --bs-table-bg: var(--ap-azul);
+    --bs-table-border-color: var(--ap-azul);
+    --bs-table-color: var(--ap-yeso);
+}
+
+.table > :not(caption) > * > * {
+    border-bottom-color: var(--ap-arena);
+}
+
+/* ===== Portada y secciones del catálogo ===== */
+html {
+    scroll-behavior: smooth;
+}
+
+.portada {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: clamp(420px, 68vh, 640px);
+    border-radius: 1rem;
+    overflow: hidden;
+    color: var(--ap-yeso);
+    background: linear-gradient(90deg, rgba(15,30,46,.78) 0%, rgba(15,30,46,.45) 45%, rgba(15,30,46,0) 80%), url('../img/portada-caldenes.jpg') center 35% / cover no-repeat;
+}
+
+.portada-contenido {
+    padding: 2.5rem;
+    max-width: 560px;
+}
+/* Versión monocromática clara del logo (permitida por el manual) para fondo oscuro */
+.portada-logo {
+    width: min(320px, 80%);
+    height: auto;
+    margin-bottom: 1.25rem;
+    filter: brightness(0) invert(1);
+}
+
+.portada .portada-lema {
+    color: var(--ap-yeso);
+    font-size: clamp(1.6rem, 3.2vw, 2.4rem);
+    font-style: italic;
+    font-weight: 500;
+    margin-bottom: .75rem;
+}
+
+.portada-texto {
+    font-size: 1.05rem;
+    opacity: .92;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 576px) {
+    .portada {
+        background: linear-gradient(180deg, rgba(15,30,46,.82), rgba(15,30,46,.35)), url('../img/portada-caldenes.jpg') 70% center / cover no-repeat;
+    }
+
+    .portada-contenido {
+        padding: 1.5rem;
+    }
+}
+
+.seccion {
+    margin-top: 3.5rem;
+    scroll-margin-top: 1rem;
+}
+
+.seccion-titulo {
+    margin-bottom: .25rem;
+}
+
+.seccion-sub {
+    color: var(--ap-tierra);
+    margin-bottom: 1.5rem;
+}
+
+/* Tarjetas de colección */
+.coleccion-tarjeta {
+    display: block;
+    height: 100%;
+    padding: 1.5rem;
+    background: var(--ap-blanco);
+    border: 1px solid var(--ap-arena);
+    border-top: 4px solid var(--ap-ocre);
+    border-radius: .75rem;
+    text-decoration: none;
+    color: var(--ap-gris-oscuro);
+    transition: transform .15s, box-shadow .15s;
+}
+
+    .coleccion-tarjeta:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 .5rem 1.25rem rgba(15,30,46,.12);
+        color: var(--ap-gris-oscuro);
+    }
+
+    .coleccion-tarjeta.activa {
+        background: var(--ap-arena);
+        border-top-color: var(--ap-azul);
+    }
+
+    .coleccion-tarjeta h3 {
+        font-size: 1.5rem;
+    }
+
+    .coleccion-tarjeta p {
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        font-size: .95rem;
+    }
+
+.coleccion-ir {
+    color: var(--ap-ocre);
+    font-weight: 700;
+}
+
+/* Tarjetas de cuadernos */
+.cuaderno-tarjeta {
+    height: 100%;
+    padding: 1.5rem;
+    text-align: center;
+    background: var(--ap-blanco);
+    border: 1px solid var(--ap-arena);
+    border-radius: .75rem;
+}
+
+.cuaderno-icono {
+    color: var(--ap-ocre);
+    margin-bottom: .5rem;
+}
+
+.cuaderno-tarjeta h3 {
+    font-size: 1.35rem;
+}
+
+
+/* ===== Navbar fija al hacer scroll ===== */
+header {
+    position: sticky;
+    top: 0;
+    z-index: 1030; /* por encima del contenido y de los carruseles */
+    background-color: var(--ap-blanco);
+    margin-bottom: 1rem;
+}
+
+    header .navbar {
+        margin-bottom: 0 !important;
+    }
+
+/* Al saltar a una sección (#lamparas, #cuadernos), que la barra no tape el título */
+html {
+    scroll-padding-top: 5.5rem;
+}
+
+/* ===== Contraste: planos y bordes ===== */
+:root {
+    --ap-borde: #CDBE9F; /* arena más oscuro, para bordes visibles */
+    --bs-border-color: var(--ap-borde);
+}
+
+/* Tarjetas y campos en blanco: se despegan del fondo crema */
+.card {
+    background-color: #fff;
+    border-color: var(--ap-borde);
+}
+
+.form-control,
+.form-select,
+.input-group-text {
+    background-color: #fff;
+    border-color: var(--ap-borde);
+    color: var(--ap-gris-oscuro);
+}
+
+    .form-control:disabled {
+        background-color: var(--ap-gris-claro);
+    }
+
+/* Restos grises de Bootstrap -> tierra */
+.bg-secondary {
+    background-color: var(--ap-tierra) !important;
+}
+
+.card-header {
+    border-bottom-color: var(--ap-borde);
+}
+
+/* Tablas: encabezado arena con texto azul y bordes visibles */
+.table-light {
+    --bs-table-bg: var(--ap-arena);
+    --bs-table-color: var(--ap-azul);
+    --bs-table-border-color: var(--ap-borde);
+}
+
+.table {
+    --bs-table-border-color: var(--ap-borde);
+}
+
+    .table > :not(caption) > * > * {
+        border-bottom-color: var(--ap-borde);
+    }
+
+.table-bordered > :not(caption) > * > * {
+    border-color: var(--ap-borde);
+}
+
+.table tbody tr:hover {
+    background-color: rgba(231, 220, 198, .35);
+}
+
+/* Líneas separadoras (hr) más visibles */
+hr {
+    color: var(--ap-borde);
+    opacity: 1;
+}
+
+/* ===== Menús desplegables ===== */
+.dropdown-menu {
+    background-color: var(--ap-blanco);
+    border-color: var(--ap-borde);
+    box-shadow: 0 .5rem 1.25rem rgba(15, 30, 46, .12);
+}
+
+.dropdown-item {
+    color: var(--ap-azul);
+}
+
+    .dropdown-item:hover,
+    .dropdown-item:focus {
+        background-color: var(--ap-arena);
+        color: var(--ap-azul);
+    }
+
+.dropdown-divider {
+    border-top-color: var(--ap-borde);
+}
+
+/* ===== Pedidos: estados y avance ===== */
+.estado {
+    display: inline-block;
+    padding: .25rem .7rem;
+    border-radius: 999px;
+    font-size: .8rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.estado-pendiente {
+    background: var(--ap-ocre);
+}
+
+.estado-produccion {
+    background: var(--ap-azul);
+}
+
+.estado-terminado {
+    background: #5F7050;
+}
+
+.estado-entregado {
+    background: var(--ap-tierra);
+}
+
+.estado-cancelado {
+    background: #A63D2F;
+}
+
+.pedido-pasos {
+    display: flex;
+    gap: .5rem;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem;
+}
+
+    .pedido-pasos li {
+        flex: 1;
+        text-align: center;
+        padding: .6rem .3rem;
+        border-bottom: 4px solid var(--ap-borde);
+        color: #8a7e69;
+        font-size: .9rem;
+    }
+
+        .pedido-pasos li.hecho {
+            border-bottom-color: var(--ap-ocre);
+            color: var(--ap-tierra);
+        }
+
+        .pedido-pasos li.actual {
+            border-bottom-color: var(--ap-azul);
+            color: var(--ap-azul);
+            font-weight: 700;
+        }

@@ -1,9 +1,10 @@
-﻿using System.Security.Claims;
-using AlmaDelMarPampeano.Models;
+﻿using AlmaDelMarPampeano.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using System.Reflection.Emit;
+using System.Security.Claims;
 
 namespace AlmaDelMarPampeano.Data
 {
@@ -84,6 +85,12 @@ namespace AlmaDelMarPampeano.Data
                 .WithMany(l => l.Fotos)
                 .HasForeignKey(f => f.LamparaId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<DetallePedido>()
+            .HasOne(d => d.Lampara)
+            .WithMany()
+            .HasForeignKey(d => d.LamparaId)
+            .OnDelete(DeleteBehavior.Restrict);
         }
 
         // ------------------------------------------------------------------

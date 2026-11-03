@@ -3,20 +3,19 @@
 
 <button type="button" id="lumi-boton" class="lumi-boton"
         aria-label="Abrir el chat con Lumi" aria-expanded="false" aria-controls="lumi-panel">
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M9 18h6" />
-        <path d="M10 21h4" />
-        <path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" />
-    </svg>
+    <img src="~/img/lumi.png" alt="" width="48" height="41" />
 </button>
+<span class="lumi-cartel" aria-hidden="true">¿Te ayudo? Soy Lumi</span>
 
 <section id="lumi-panel" class="lumi-panel" role="dialog" aria-label="Chat con Lumi"
          data-url="@Url.Action("Preguntar", "Chat")">
     <header class="lumi-encabezado">
-        <div>
-            <strong>Lumi</strong>
-            <div class="small">Asistente de Alma del Mar Pampeano</div>
+        <div class="lumi-identidad">
+            <img src="~/img/lumi.png" alt="" width="44" height="38" />
+            <div>
+                <strong>Lumi</strong>
+                <div class="small">Asistente de Alma del Mar Pampeano</div>
+            </div>
         </div>
         <button type="button" id="lumi-cerrar" class="btn-close btn-close-white" aria-label="Cerrar el chat"></button>
     </header>

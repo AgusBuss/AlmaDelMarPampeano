@@ -27,6 +27,12 @@ namespace AlmaDelMarPampeano.Models
         [ForeignKey("TipoLuzId")]
         public TipoLuz? TipoLuz { get; set; }
 
+        // Pieza del catálogo que se pidió. Es null cuando el pedido es "a medida"
+        // (el cliente eligió campana, base y luz sin partir de una pieza existente).
+        public int? LamparaId { get; set; }
+        [ForeignKey("LamparaId")]
+        public Lampara? Lampara { get; set; }
+
         [Required]
         public int Cantidad { get; set; }
     }

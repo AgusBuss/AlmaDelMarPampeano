@@ -44,6 +44,7 @@ namespace AlmaDelMarPampeano.Controllers
                     .Include(p => p.Detalles).ThenInclude(d => d.MaterialCampana)
                     .Include(p => p.Detalles).ThenInclude(d => d.MaterialBase)
                     .Include(p => p.Detalles).ThenInclude(d => d.TipoLuz)
+                    .Include(p => p.Detalles).ThenInclude(d => d.Lampara).ThenInclude(l => l!.Fotos)
                     .Include(p => p.Archivos);
             }
 
@@ -62,7 +63,10 @@ namespace AlmaDelMarPampeano.Controllers
         // ---------------------------------------------------------------- LISTADO
         public async Task<IActionResult> Index()
         {
-            var query = _context.Pedidos.Include(p => p.EstadoPedido).AsQueryable();
+            var query = _context.Pedidos
+            .Include(p => p.EstadoPedido)
+            .Include(p => p.Detalles).ThenInclude(d => d.Lampara)
+            .AsQueryable();
 
             if (!EsAdmin)
             {
@@ -73,7 +77,148 @@ namespace AlmaDelMarPampeano.Controllers
             return View(await query.OrderByDescending(p => p.FechaSolicitud).ToListAsync());
         }
 
-        // ---------------------------------------------------------------- CREAR
+        // ---------------------------------------------------------------- NUEVO PEDIDO (un pedido = una lámpara)
+        // Con ?lamparaId=N se pide una pieza del catálogo; sin parámetro, una lámpara a medida.
+        public async Task<IActionResult> Pedir(int? lamparaId)
+        {
+            var vm = new PedidoNuevoViewModel();
+
+            if (lamparaId != null)
+            {
+                var lampara = await ObtenerLamparaPedibleAsync(lamparaId.Value);
+                if (lampara == null)
+                {
+                    TempData["Error"] = "Esa lámpara no está disponible para pedir. Podés pedir una a medida.";
+                    return RedirectToAction(nameof(Pedir));
+                }
+
+                vm.LamparaId = lampara.Id;
+                vm.Lampara = lampara;
+            }
+
+            await CargarOpcionesAsync(vm);
+            return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Pedir(PedidoNuevoViewModel vm)
+        {
+            Lampara? lampara = null;
+
+            if (vm.LamparaId != null)
+            {
+                lampara = await ObtenerLamparaPedibleAsync(vm.LamparaId.Value);
+                if (lampara == null)
+                {
+                    TempData["Error"] = "Esa lámpara ya no está disponible para pedir. Podés pedir una a medida.";
+                    return RedirectToAction(nameof(Pedir));
+                }
+
+                // Pieza del catálogo: campana y base salen de la pieza y la cantidad es siempre 1.
+                // Nada de esto se confía al formulario.
+                ModelState.Remove(nameof(vm.MaterialCampanaId));
+                ModelState.Remove(nameof(vm.MaterialBaseId));
+                ModelState.Remove(nameof(vm.Cantidad));
+                vm.MaterialCampanaId = lampara.MaterialCampanaId;
+                vm.MaterialBaseId = lampara.MaterialBaseId;
+                vm.Cantidad = 1;
+                vm.Lampara = lampara;
+            }
+
+            // El archivo se valida ANTES de crear nada, para no dejar un pedido a medias
+            var errorArchivo = ValidarArchivo(vm.Referencia);
+            if (errorArchivo != null)
+            {
+                ModelState.AddModelError(nameof(vm.Referencia), errorArchivo);
+            }
+
+            if (!ModelState.IsValid)
+            {
+                await CargarOpcionesAsync(vm);
+                return View(vm);
+            }
+
+            var estado = await _context.EstadosPedido.FirstOrDefaultAsync(e => e.NombreEstado == EstadoInicial);
+            var campana = await _context.MaterialesCampana.FindAsync(vm.MaterialCampanaId!.Value);
+            var material = await _context.MaterialesBase.FindAsync(vm.MaterialBaseId!.Value);
+            var tipoLuz = await _context.TiposLuz.FindAsync(vm.TipoLuzId!.Value);
+
+            if (estado == null)
+            {
+                ModelState.AddModelError(string.Empty, "No se pudo crear el pedido porque falta el estado inicial \"Pendiente\". Avisá al administrador.");
+            }
+            else if (campana == null || material == null || tipoLuz == null)
+            {
+                ModelState.AddModelError(string.Empty, "Alguna de las opciones elegidas ya no existe. Probá de nuevo.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                await CargarOpcionesAsync(vm);
+                return View(vm);
+            }
+
+            // El precio lo calcula siempre el servidor:
+            // pieza del catálogo = el precio que se ve en el catálogo; a medida = (campana + base) x cantidad
+            var precioTotal = lampara != null
+                ? lampara.Precio
+                : (campana!.PrecioBase + material!.Precio) * vm.Cantidad;
+
+            var pedido = new Pedido
+            {
+                UsuarioId = _userManager.GetUserId(User)!,
+                FechaSolicitud = DateTime.Now,
+                PrecioTotal = precioTotal,
+                Observaciones = vm.Observaciones ?? string.Empty,
+                EstadoPedidoId = estado!.Id
+            };
+
+            pedido.Detalles.Add(new DetallePedido
+            {
+                MaterialCampanaId = campana!.Id,
+                MaterialBaseId = material!.Id,
+                TipoLuzId = tipoLuz!.Id,
+                LamparaId = lampara?.Id,
+                Cantidad = vm.Cantidad
+            });
+
+            _context.Pedidos.Add(pedido);
+            await _context.SaveChangesAsync();
+
+            if (vm.Referencia != null && vm.Referencia.Length > 0)
+            {
+                await GuardarArchivoAsync(pedido.Id, vm.Referencia, "Referencia");
+            }
+
+            TempData["Exito"] = "¡Recibimos tu pedido! Te vamos a ir avisando cuando cambie de estado.";
+            return RedirectToAction(nameof(Details), new { id = pedido.Id });
+        }
+
+        // Una pieza se puede pedir si está disponible y tiene campana y base definidas
+        private async Task<Lampara?> ObtenerLamparaPedibleAsync(int id)
+        {
+            return await _context.Lamparas
+                .AsNoTracking()
+                .Include(l => l.Coleccion)
+                .Include(l => l.MaterialCampana)
+                .Include(l => l.MaterialBase)
+                .Include(l => l.Fotos)
+                .FirstOrDefaultAsync(l => l.Id == id
+                    && l.Disponible
+                    && l.MaterialCampanaId != null
+                    && l.MaterialBaseId != null);
+        }
+
+        private async Task CargarOpcionesAsync(PedidoNuevoViewModel vm)
+        {
+            vm.CampanasLista = await _context.MaterialesCampana.AsNoTracking().OrderBy(c => c.Nombre).ToListAsync();
+            vm.BasesLista = await _context.MaterialesBase.AsNoTracking().OrderBy(b => b.TipoMaterial).ToListAsync();
+            var tipos = await _context.TiposLuz.AsNoTracking().OrderBy(t => t.Id).ToListAsync();
+            vm.TiposLuz = tipos.Select(t => new SelectListItem(t.Nombre, t.Id.ToString()));
+        }
+
+        // ---------------------------------------------------------------- CREAR (flujo anterior, se retira en el paso final)
         public IActionResult Create()
         {
             return View(new PedidoCreateViewModel());
@@ -222,7 +367,7 @@ namespace AlmaDelMarPampeano.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // ---------------------------------------------------------------- DETALLES (lámparas)
+        // ---------------------------------------------------------------- DETALLES (lámparas) - flujo anterior, se retira en el paso final
         public async Task<IActionResult> AgregarDetalle(int id)
         {
             var pedido = await ObtenerPedidoPermitidoAsync(id);
@@ -331,20 +476,43 @@ namespace AlmaDelMarPampeano.Controllers
                 return RedirectToAction(nameof(Details), new { id = pedidoId });
             }
 
-            if (archivoSubido.Length > TamanoMaximoArchivo)
+            var errorArchivo = ValidarArchivo(archivoSubido);
+            if (errorArchivo != null)
             {
-                TempData["Error"] = "El archivo supera el tamaño máximo permitido (5 MB).";
-                return RedirectToAction(nameof(Details), new { id = pedidoId });
-            }
-
-            var extension = Path.GetExtension(archivoSubido.FileName).ToLowerInvariant();
-            if (!ExtensionesPermitidas.Contains(extension))
-            {
-                TempData["Error"] = "Formato no permitido. Solo se aceptan archivos JPG, PNG o PDF.";
+                TempData["Error"] = errorArchivo;
                 return RedirectToAction(nameof(Details), new { id = pedidoId });
             }
 
             var tipo = tipoDocumento != null && TiposDocumento.Contains(tipoDocumento) ? tipoDocumento : "Referencia";
+            await GuardarArchivoAsync(pedidoId, archivoSubido, tipo);
+
+            TempData["Exito"] = "El archivo se subió correctamente.";
+            return RedirectToAction(nameof(Details), new { id = pedidoId });
+        }
+
+        // Devuelve el mensaje de error, o null si el archivo es válido (o si no hay archivo)
+        private static string? ValidarArchivo(IFormFile? archivo)
+        {
+            if (archivo == null || archivo.Length == 0) return null;
+
+            if (archivo.Length > TamanoMaximoArchivo)
+            {
+                return "El archivo supera el tamaño máximo permitido (5 MB).";
+            }
+
+            var extension = Path.GetExtension(archivo.FileName).ToLowerInvariant();
+            if (!ExtensionesPermitidas.Contains(extension))
+            {
+                return "Formato no permitido. Solo se aceptan archivos JPG, PNG o PDF.";
+            }
+
+            return null;
+        }
+
+        // Guarda el archivo en disco y su registro en la base. Asume que ya fue validado.
+        private async Task GuardarArchivoAsync(int pedidoId, IFormFile archivo, string tipoDocumento)
+        {
+            var extension = Path.GetExtension(archivo.FileName).ToLowerInvariant();
 
             var carpetaDestino = Path.Combine(_webHostEnvironment.WebRootPath, "adjuntos");
             Directory.CreateDirectory(carpetaDestino);
@@ -355,21 +523,18 @@ namespace AlmaDelMarPampeano.Controllers
 
             using (var stream = new FileStream(rutaFisica, FileMode.Create))
             {
-                await archivoSubido.CopyToAsync(stream);
+                await archivo.CopyToAsync(stream);
             }
 
             _context.ArchivosAdjuntos.Add(new ArchivoAdjunto
             {
                 PedidoId = pedidoId,
-                NombreArchivo = Path.GetFileName(archivoSubido.FileName),
+                NombreArchivo = Path.GetFileName(archivo.FileName),
                 RutaArchivo = "/adjuntos/" + nombreUnico,
-                TipoDocumento = tipo,
+                TipoDocumento = tipoDocumento,
                 FechaSubida = DateTime.Now
             });
             await _context.SaveChangesAsync();
-
-            TempData["Exito"] = "El archivo se subió correctamente.";
-            return RedirectToAction(nameof(Details), new { id = pedidoId });
         }
     }
 }
