@@ -1,35 +1,64 @@
-﻿@model IEnumerable<AlmaDelMarPampeano.Models.Pedido>
+﻿@model AlmaDelMarPampeano.ViewModels.PedidosIndexViewModel
 
 @{
-    var esAdmin = User.IsInRole("Administrador");
-    ViewData["Title"] = esAdmin ? "Pedidos" : "Mis pedidos";
+    ViewData["Title"] = Model.EsAdmin ? "Pedidos recibidos" : "Mis pedidos";
 }
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h1 class="mb-0">@ViewData["Title"]</h1>
-    <a asp-action="Pedir" class="btn btn-primary">Pedir una lámpara a medida</a>
+    @if (!Model.EsAdmin)
+    {
+        <a asp-action="Pedir" class="btn btn-primary">Pedir una lámpara a medida</a>
+    }
 </div>
 
-@if (!Model.Any())
+@if (Model.EsAdmin)
 {
-    <div class="cuaderno-tarjeta">
-        <h2 class="h4">Todavía no hay pedidos</h2>
-        <p class="mb-3">
-            Elegí una pieza del catálogo o armá una lámpara a medida.
-            Después vas a poder seguir acá el estado de tu pedido.
-        </p>
-        <div class="d-flex flex-wrap gap-2 justify-content-center">
-            <a asp-controller="Catalogo" asp-action="Index" asp-fragment="lamparas" class="btn btn-primary">Ver el catálogo</a>
-            <a asp-action="Pedir" class="btn btn-outline-primary">Pedir a medida</a>
+    @* Filtro por estado *@
+    <ul class="nav nav-pills flex-wrap gap-2 mb-3">
+        <li class="nav-item">
+            <a class="nav-link @(Model.EstadoId == null ? "active" : "")" asp-action="Index">Todos</a>
+        </li>
+        @foreach (var e in Model.Estados)
+        {
+            <li class="nav-item">
+                <a class="nav-link @(Model.EstadoId == e.Id ? "active" : "")"
+                   asp-action="Index" asp-route-estadoId="@e.Id">@e.NombreEstado</a>
+            </li>
+        }
+    </ul>
+}
+
+@if (!Model.Pedidos.Any())
+{
+    @if (Model.EsAdmin)
+    {
+        <div class="alert alert-info">No hay pedidos @(Model.EstadoId == null ? "todavía" : "en este estado").</div>
+    }
+    else
+    {
+        <div class="cuaderno-tarjeta">
+            <h2 class="h4">Todavía no hay pedidos</h2>
+            <p class="mb-3">
+                Elegí una pieza del catálogo o armá una lámpara a medida.
+                Después vas a poder seguir acá el estado de tu pedido.
+            </p>
+            <div class="d-flex flex-wrap gap-2 justify-content-center">
+                <a asp-controller="Catalogo" asp-action="Lamparas" class="btn btn-primary">Ver el catálogo</a>
+                <a asp-action="Pedir" class="btn btn-outline-primary">Pedir a medida</a>
+            </div>
         </div>
-    </div>
+    }
 }
 else
 {
-    <p class="text-muted">
-        ¿Querés otra pieza? Elegila en el <a asp-controller="Catalogo" asp-action="Index" asp-fragment="lamparas">catálogo</a>
-        o pedí una a medida.
-    </p>
+    @if (!Model.EsAdmin)
+    {
+        <p class="text-muted">
+            ¿Querés otra pieza? Elegila en el <a asp-controller="Catalogo" asp-action="Lamparas">catálogo</a>
+            o pedí una a medida.
+        </p>
+    }
 
     <div class="table-responsive">
         <table class="table table-striped table-hover align-middle">
@@ -37,6 +66,10 @@ else
                 <tr>
                     <th>N.º</th>
                     <th>Fecha</th>
+                    @if (Model.EsAdmin)
+                    {
+                        <th>Cliente</th>
+                    }
                     <th>Lámpara</th>
                     <th>Estado</th>
                     <th class="text-end">Total</th>
@@ -44,26 +77,40 @@ else
                 </tr>
             </thead>
             <tbody>
-                @foreach (var p in Model)
+                @foreach (var p in Model.Pedidos)
                 {
                     var detalle = p.Detalles.FirstOrDefault();
                     var queSePidio = detalle?.Lampara?.Nombre ?? "Lámpara a medida";
                     if (p.Detalles.Count > 1) { queSePidio += $" y {p.Detalles.Count - 1} más"; }
-                    var puedeEliminar = esAdmin || p.EstadoPedido?.NombreEstado == "Pendiente";
+                    var esPendiente = p.EstadoPedido?.NombreEstado == "Pendiente";
 
                     <tr>
                         <td>#@p.Id</td>
                         <td>@p.FechaSolicitud.ToString("dd/MM/yyyy HH:mm")</td>
+                        @if (Model.EsAdmin)
+                        {
+                            <td>@(Model.Emails.TryGetValue(p.UsuarioId, out var email) ? email : "—")</td>
+                        }
                         <td>@queSePidio</td>
                         <td><partial name="_EstadoBadge" model="@(p.EstadoPedido?.NombreEstado ?? "")" /></td>
                         <td class="text-end">$ @p.PrecioTotal.ToString("N2")</td>
                         <td class="text-end text-nowrap">
                             <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary">Ver pedido</a>
-                            @if (puedeEliminar)
+                            @if (esPendiente)
+                            {
+                                <form asp-action="Cancelar" asp-route-id="@p.Id" method="post" class="form-eliminar d-inline"
+                                      data-titulo="¿Cancelar el pedido?"
+                                      data-mensaje="Se va a cancelar el pedido #@p.Id."
+                                      data-boton="Sí, cancelar pedido"
+                                      data-volver="No, mantenerlo">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar</button>
+                                </form>
+                            }
+                            @if (Model.EsAdmin)
                             {
                                 <form asp-action="Delete" asp-route-id="@p.Id" method="post" class="form-eliminar d-inline"
-                                      data-mensaje="Se va a eliminar el pedido #@p.Id.">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                                      data-mensaje="Se va a eliminar definitivamente el pedido #@p.Id.">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">Eliminar</button>
                                 </form>
                             }
                         </td>

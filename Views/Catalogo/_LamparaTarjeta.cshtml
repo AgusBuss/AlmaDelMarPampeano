@@ -1,0 +1,98 @@
+﻿@model AlmaDelMarPampeano.Models.Lampara
+
+@{
+    var fotos = Model.Fotos.OrderBy(f => f.Orden).ToList();
+    var idCarrusel = $"carrusel-{Model.Id}";
+}
+
+<div class="card h-100 shadow-sm">
+
+    @if (fotos.Count > 1)
+    {
+        @* Pasarela de fotos: flechas y puntitos para pasar entre ellas *@
+        <div id="@idCarrusel" class="carousel slide" data-bs-interval="false">
+            <div class="carousel-indicators">
+                @for (var i = 0; i < fotos.Count; i++)
+                {
+                    <button type="button" data-bs-target="#@idCarrusel" data-bs-slide-to="@i"
+                            class="@(i == 0 ? "active" : "")" aria-label="Foto @(i + 1)"></button>
+                }
+            </div>
+            <div class="carousel-inner">
+                @for (var i = 0; i < fotos.Count; i++)
+                {
+                    <div class="carousel-item @(i == 0 ? "active" : "")">
+                        <img src="@fotos[i].RutaArchivo" class="d-block w-100"
+                             style="height:280px;object-fit:cover;"
+                             alt="@Model.Nombre, foto @(i + 1)" />
+                    </div>
+                }
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#@idCarrusel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Foto anterior</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#@idCarrusel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Foto siguiente</span>
+            </button>
+        </div>
+    }
+    else if (fotos.Count == 1)
+    {
+        <img src="@fotos[0].RutaArchivo" class="card-img-top"
+             style="height:280px;object-fit:cover;" alt="@Model.Nombre" />
+    }
+    else
+    {
+        <div class="bg-light text-muted d-flex align-items-center justify-content-center"
+             style="height:280px;">
+            Sin fotos
+        </div>
+    }
+
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+            <h3 class="h5 card-title mb-1">@Model.Nombre</h3>
+            @if (Model.Disponible)
+            {
+                <span class="badge bg-success">Disponible</span>
+            }
+            else
+            {
+                <span class="badge bg-secondary">Vendida</span>
+            }
+        </div>
+
+        <p class="text-muted small mb-2">
+            @if (Model.NumeroPieza != null)
+            {
+                <text>Pieza N.º @Model.NumeroPieza · </text>
+            }
+            @Model.Coleccion?.Nombre
+        </p>
+
+        <p class="small mb-2">
+            <strong>Campana:</strong> @(Model.MaterialCampana?.Nombre ?? "—")<br />
+            <strong>Base:</strong> @(Model.MaterialBase?.TipoMaterial ?? "—")
+        </p>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Descripcion))
+        {
+            <p class="card-text">@Model.Descripcion</p>
+        }
+    </div>
+
+    <div class="card-footer bg-transparent d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <span class="fs-5 fw-semibold">$ @Model.Precio.ToString("N2")</span>
+        @if (Model.Disponible)
+        {
+            <a asp-controller="Pedidos" asp-action="Pedir" asp-route-lamparaId="@Model.Id"
+               class="btn btn-primary">Quiero esta lámpara</a>
+        }
+        else
+        {
+            <span class="text-muted small">Pieza vendida</span>
+        }
+    </div>
+</div>

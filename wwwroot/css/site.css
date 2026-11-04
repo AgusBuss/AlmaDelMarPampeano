@@ -543,3 +543,25 @@ hr {
             color: var(--ap-azul);
             font-weight: 700;
         }
+
+/* ===== Avisos informativos con la paleta de la marca ===== */
+.alert-info {
+    --bs-alert-color: var(--ap-tierra);
+    --bs-alert-bg: #EFE6D2;
+    --bs-alert-border-color: #E1D3B3;
+}
+
+/* ===== Cartel de confirmación (SweetAlert2) con la identidad de la marca ===== */
+.swal-marca {
+    background: var(--ap-blanco);
+    border: 1px solid var(--ap-borde);
+    border-radius: 1rem;
+    font-family: 'Lato', system-ui, sans-serif;
+    color: var(--ap-gris-oscuro);
+}
+
+.swal-marca-titulo {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 600;
+    color: var(--ap-azul);
+}

@@ -68,7 +68,7 @@ namespace AlmaDelMarPampeano.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Exito"] = "Tu contraseña se cambió correctamente.";
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Index", "Catalogo");
         }
     }
 }

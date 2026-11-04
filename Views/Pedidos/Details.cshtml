@@ -1,4 +1,5 @@
-﻿@model AlmaDelMarPampeano.Models.Pedido
+﻿@using Microsoft.AspNetCore.Mvc.Rendering
+@model AlmaDelMarPampeano.Models.Pedido
 
 @{
     var esAdmin = User.IsInRole("Administrador");
@@ -8,7 +9,13 @@
     var cancelado = nombreEstado.Contains("cancel");
     var pasos = new[] { ("pend", "Pendiente"), ("produc", "En producción"), ("termin", "Terminado"), ("entreg", "Entregado") };
     var actual = Array.FindIndex(pasos, p => nombreEstado.Contains(p.Item1));
-    var puedeModificar = esAdmin || Model.EstadoPedido?.NombreEstado == "Pendiente";
+    var esPendiente = Model.EstadoPedido?.NombreEstado == "Pendiente";
+    var puedeModificar = esAdmin || esPendiente;
+    var mensajeEstado = cancelado ? null
+        : nombreEstado.Contains("entreg") ? "¡Gracias por elegirnos! Tu lámpara ya fue entregada."
+        : nombreEstado.Contains("termin") ? "Tu lámpara está lista. El taller te contacta para coordinar la entrega o el retiro."
+        : nombreEstado.Contains("produc") ? "Tu lámpara se está haciendo. Cada pieza lleva su tiempo."
+        : "Recibimos tu pedido. El taller se pone en contacto para confirmar el precio, el plazo y la forma de pago.";
 }
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
@@ -16,6 +23,11 @@
     <partial name="_EstadoBadge" model="@(Model.EstadoPedido?.NombreEstado ?? "")" />
 </div>
 <p class="text-muted mb-4">Realizado el @Model.FechaSolicitud.ToString("dd/MM/yyyy 'a las' HH:mm")</p>
+
+@if (esAdmin)
+{
+    <p class="mb-4">Cliente: <strong>@ViewBag.EmailCliente</strong></p>
+}
 
 @* ===== Avance del pedido ===== *@
 @if (cancelado)
@@ -31,6 +43,11 @@ else
             <li class="@clase">@pasos[i].Item2</li>
         }
     </ol>
+}
+
+@if (mensajeEstado != null)
+{
+    <div class="alert alert-info">@mensajeEstado</div>
 }
 
 <div class="row g-4">
@@ -54,7 +71,10 @@ else
                             @if (d.Lampara != null)
                             {
                                 <p class="text-muted small mb-2">
-                                    @if (d.Lampara.NumeroPieza != null) { <text>Pieza N.º @d.Lampara.NumeroPieza · </text> }
+                                    @if (d.Lampara.NumeroPieza != null)
+                                    {
+                                        <text>Pieza N.º @d.Lampara.NumeroPieza · </text>
+                                    }
                                     Pieza del catálogo
                                 </p>
                             }
@@ -150,17 +170,43 @@ else
                 <p class="text-muted small mt-2">El taller confirma el precio final y los plazos.</p>
 
                 <div class="d-grid gap-2 mt-3">
+                    @if (esAdmin)
+                    {
+                        <form asp-action="CambiarEstado" asp-route-id="@Model.Id" method="post" class="mb-2">
+                            <label class="form-label small mb-1" for="estadoPedidoId">Estado del pedido</label>
+                            <div class="input-group">
+                                <select id="estadoPedidoId" name="estadoPedidoId" class="form-select"
+                                        asp-items="(IEnumerable<SelectListItem>)ViewBag.Estados"></select>
+                                <button type="submit" class="btn btn-primary">Guardar</button>
+                            </div>
+                        </form>
+                    }
                     @if (puedeModificar)
                     {
                         <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary">
-                            @(esAdmin ? "Cambiar estado o notas" : "Editar mis notas")
+                            @(esAdmin ? "Editar notas" : "Editar mis notas")
                         </a>
-                        <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="form-eliminar d-grid"
-                              data-mensaje="Se va a eliminar el pedido #@Model.Id.">
-                            <button type="submit" class="btn btn-outline-danger">Eliminar pedido</button>
+                    }
+                    @if (esPendiente)
+                    {
+                        <form asp-action="Cancelar" asp-route-id="@Model.Id" method="post" class="form-eliminar d-grid"
+                              data-titulo="¿Cancelar el pedido?"
+                              data-mensaje="Se va a cancelar el pedido #@Model.Id."
+                              data-boton="Sí, cancelar pedido"
+                              data-volver="No, mantenerlo">
+                            <button type="submit" class="btn btn-outline-danger">Cancelar pedido</button>
                         </form>
                     }
-                    <a asp-action="Index" class="btn btn-outline-secondary">Volver a mis pedidos</a>
+                    @if (esAdmin)
+                    {
+                        <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="form-eliminar d-grid"
+                              data-mensaje="Se va a eliminar definitivamente el pedido #@Model.Id.">
+                            <button type="submit" class="btn btn-outline-secondary">Eliminar definitivamente</button>
+                        </form>
+                    }
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        @(esAdmin ? "Volver a los pedidos" : "Volver a mis pedidos")
+                    </a>
                 </div>
             </div>
         </div>

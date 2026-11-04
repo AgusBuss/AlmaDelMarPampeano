@@ -13,6 +13,7 @@ namespace AlmaDelMarPampeano.Controllers
     public class PedidosController : Controller
     {
         private const string EstadoInicial = "Pendiente";
+        private const string EstadoCancelado = "Cancelado";
         private const long TamanoMaximoArchivo = 5 * 1024 * 1024; // 5 MB
         private static readonly string[] ExtensionesPermitidas = { ".jpg", ".jpeg", ".png", ".pdf" };
         private static readonly string[] TiposDocumento = { "Referencia", "Comprobante", "Presupuesto" };
@@ -57,16 +58,17 @@ namespace AlmaDelMarPampeano.Controllers
             return await query.FirstOrDefaultAsync(p => p.Id == id);
         }
 
-        private bool PuedeBorrar(Pedido pedido) =>
-            EsAdmin || pedido.EstadoPedido?.NombreEstado == EstadoInicial;
+        // El borrado definitivo es solo del administrador; el cliente cancela (ver acción Cancelar)
+        private bool PuedeBorrar(Pedido pedido) => EsAdmin;
 
         // ---------------------------------------------------------------- LISTADO
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int? estadoId)
         {
             var query = _context.Pedidos
-            .Include(p => p.EstadoPedido)
-            .Include(p => p.Detalles).ThenInclude(d => d.Lampara)
-            .AsQueryable();
+                .AsNoTracking()
+                .Include(p => p.EstadoPedido)
+                .Include(p => p.Detalles).ThenInclude(d => d.Lampara)
+                .AsQueryable();
 
             if (!EsAdmin)
             {
@@ -74,7 +76,30 @@ namespace AlmaDelMarPampeano.Controllers
                 query = query.Where(p => p.UsuarioId == userId);
             }
 
-            return View(await query.OrderByDescending(p => p.FechaSolicitud).ToListAsync());
+            if (estadoId != null)
+            {
+                query = query.Where(p => p.EstadoPedidoId == estadoId);
+            }
+
+            var pedidos = await query.OrderByDescending(p => p.FechaSolicitud).ToListAsync();
+
+            var vm = new PedidosIndexViewModel
+            {
+                Pedidos = pedidos,
+                EsAdmin = EsAdmin,
+                EstadoId = estadoId
+            };
+
+            if (EsAdmin)
+            {
+                var ids = pedidos.Select(p => p.UsuarioId).Distinct().ToList();
+                vm.Emails = await _userManager.Users
+                    .Where(u => ids.Contains(u.Id))
+                    .ToDictionaryAsync(u => u.Id, u => u.Email ?? string.Empty);
+                vm.Estados = await _context.EstadosPedido.AsNoTracking().OrderBy(e => e.Id).ToListAsync();
+            }
+
+            return View(vm);
         }
 
         // ---------------------------------------------------------------- NUEVO PEDIDO (un pedido = una lámpara)
@@ -218,41 +243,6 @@ namespace AlmaDelMarPampeano.Controllers
             vm.TiposLuz = tipos.Select(t => new SelectListItem(t.Nombre, t.Id.ToString()));
         }
 
-        // ---------------------------------------------------------------- CREAR (flujo anterior, se retira en el paso final)
-        public IActionResult Create()
-        {
-            return View(new PedidoCreateViewModel());
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(PedidoCreateViewModel vm)
-        {
-            if (!ModelState.IsValid) return View(vm);
-
-            var estado = await _context.EstadosPedido.FirstOrDefaultAsync(e => e.NombreEstado == EstadoInicial);
-            if (estado == null)
-            {
-                ModelState.AddModelError(string.Empty, "No se pudo crear el pedido porque falta el estado inicial \"Pendiente\". Avisá al administrador.");
-                return View(vm);
-            }
-
-            var pedido = new Pedido
-            {
-                UsuarioId = _userManager.GetUserId(User)!,
-                FechaSolicitud = DateTime.Now,
-                PrecioTotal = 0,
-                Observaciones = vm.Observaciones ?? string.Empty,
-                EstadoPedidoId = estado.Id
-            };
-
-            _context.Pedidos.Add(pedido);
-            await _context.SaveChangesAsync();
-
-            TempData["Exito"] = "Pedido creado. Ahora podés agregar las lámparas y subir tus archivos de referencia.";
-            return RedirectToAction(nameof(Details), new { id = pedido.Id });
-        }
-
         // ---------------------------------------------------------------- DETALLE
         public async Task<IActionResult> Details(int? id)
         {
@@ -261,7 +251,68 @@ namespace AlmaDelMarPampeano.Controllers
             var pedido = await ObtenerPedidoPermitidoAsync(id.Value, incluirRelaciones: true);
             if (pedido == null) return NotFound();
 
+            if (EsAdmin)
+            {
+                var cliente = await _userManager.FindByIdAsync(pedido.UsuarioId);
+                ViewBag.EmailCliente = cliente?.Email;
+
+                var estados = await _context.EstadosPedido.AsNoTracking().OrderBy(e => e.Id).ToListAsync();
+                ViewBag.Estados = estados.Select(e =>
+                    new SelectListItem(e.NombreEstado, e.Id.ToString(), e.Id == pedido.EstadoPedidoId));
+            }
+
             return View(pedido);
+        }
+
+        // ---------------------------------------------------------------- CAMBIAR ESTADO (solo administrador)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador")]
+        public async Task<IActionResult> CambiarEstado(int id, int estadoPedidoId)
+        {
+            var pedido = await ObtenerPedidoPermitidoAsync(id);
+            if (pedido == null) return NotFound();
+
+            var estado = await _context.EstadosPedido.FindAsync(estadoPedidoId);
+            if (estado == null)
+            {
+                TempData["Error"] = "El estado elegido no es válido.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            pedido.EstadoPedidoId = estado.Id;
+            await _context.SaveChangesAsync(); // la auditoría queda registrada sola
+
+            TempData["Exito"] = $"El pedido #{id} pasó a \"{estado.NombreEstado}\".";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        // ---------------------------------------------------------------- CANCELAR (el pedido queda en estado "Cancelado")
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Cancelar(int id)
+        {
+            var pedido = await ObtenerPedidoPermitidoAsync(id);
+            if (pedido == null) return NotFound();
+
+            if (pedido.EstadoPedido?.NombreEstado != EstadoInicial)
+            {
+                TempData["Error"] = "Solo se pueden cancelar pedidos que estén en estado \"Pendiente\".";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            var cancelado = await _context.EstadosPedido.FirstOrDefaultAsync(e => e.NombreEstado == EstadoCancelado);
+            if (cancelado == null)
+            {
+                TempData["Error"] = "No se pudo cancelar el pedido. Avisá al administrador.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            pedido.EstadoPedidoId = cancelado.Id;
+            await _context.SaveChangesAsync(); // queda en la auditoría
+
+            TempData["Exito"] = $"Tu pedido #{id} fue cancelado.";
+            return RedirectToAction(nameof(Details), new { id });
         }
 
         // ---------------------------------------------------------------- EDITAR
@@ -271,6 +322,12 @@ namespace AlmaDelMarPampeano.Controllers
 
             var pedido = await ObtenerPedidoPermitidoAsync(id.Value);
             if (pedido == null) return NotFound();
+
+            if (!EsAdmin && pedido.EstadoPedido?.NombreEstado != EstadoInicial)
+            {
+                TempData["Error"] = "Solo podés editar tus notas mientras el pedido esté en estado \"Pendiente\".";
+                return RedirectToAction(nameof(Details), new { id = pedido.Id });
+            }
 
             var vm = new PedidoEditViewModel
             {
@@ -288,6 +345,12 @@ namespace AlmaDelMarPampeano.Controllers
         {
             var pedido = await ObtenerPedidoPermitidoAsync(vm.Id);
             if (pedido == null) return NotFound();
+
+            if (!EsAdmin && pedido.EstadoPedido?.NombreEstado != EstadoInicial)
+            {
+                TempData["Error"] = "Solo podés editar tus notas mientras el pedido esté en estado \"Pendiente\".";
+                return RedirectToAction(nameof(Details), new { id = pedido.Id });
+            }
 
             if (EsAdmin && !await _context.EstadosPedido.AnyAsync(e => e.Id == vm.EstadoPedidoId))
             {
@@ -321,7 +384,7 @@ namespace AlmaDelMarPampeano.Controllers
             vm.Estados = estados.Select(e => new SelectListItem(e.NombreEstado, e.Id.ToString()));
         }
 
-        // ---------------------------------------------------------------- BORRAR
+        // ---------------------------------------------------------------- BORRAR (solo administrador)
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
@@ -331,7 +394,7 @@ namespace AlmaDelMarPampeano.Controllers
 
             if (!PuedeBorrar(pedido))
             {
-                TempData["Error"] = "Solo se pueden borrar pedidos que estén en estado \"Pendiente\".";
+                TempData["Error"] = "Solo el administrador puede eliminar pedidos. Si todavía está pendiente, podés cancelarlo.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -347,7 +410,7 @@ namespace AlmaDelMarPampeano.Controllers
 
             if (!PuedeBorrar(pedido))
             {
-                TempData["Error"] = "Solo se pueden borrar pedidos que estén en estado \"Pendiente\".";
+                TempData["Error"] = "Solo el administrador puede eliminar pedidos. Si todavía está pendiente, podés cancelarlo.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -365,101 +428,6 @@ namespace AlmaDelMarPampeano.Controllers
 
             TempData["Exito"] = "El pedido se eliminó correctamente.";
             return RedirectToAction(nameof(Index));
-        }
-
-        // ---------------------------------------------------------------- DETALLES (lámparas) - flujo anterior, se retira en el paso final
-        public async Task<IActionResult> AgregarDetalle(int id)
-        {
-            var pedido = await ObtenerPedidoPermitidoAsync(id);
-            if (pedido == null) return NotFound();
-
-            var vm = new DetalleCreateViewModel { PedidoId = id };
-            await CargarListasAsync(vm);
-            return View(vm);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AgregarDetalle(DetalleCreateViewModel vm)
-        {
-            var pedido = await ObtenerPedidoPermitidoAsync(vm.PedidoId);
-            if (pedido == null) return NotFound();
-
-            if (!ModelState.IsValid)
-            {
-                await CargarListasAsync(vm);
-                return View(vm);
-            }
-
-            var campana = await _context.MaterialesCampana.FindAsync(vm.MaterialCampanaId!.Value);
-            var material = await _context.MaterialesBase.FindAsync(vm.MaterialBaseId!.Value);
-            var tipoLuz = await _context.TiposLuz.FindAsync(vm.TipoLuzId!.Value);
-            if (campana == null || material == null || tipoLuz == null)
-            {
-                ModelState.AddModelError(string.Empty, "Alguna de las opciones elegidas ya no existe. Probá de nuevo.");
-                await CargarListasAsync(vm);
-                return View(vm);
-            }
-
-            var detalle = new DetallePedido
-            {
-                PedidoId = pedido.Id,
-                MaterialCampanaId = campana.Id,
-                MaterialBaseId = material.Id,
-                TipoLuzId = tipoLuz.Id,
-                Cantidad = vm.Cantidad!.Value
-            };
-            _context.DetallesPedido.Add(detalle);
-
-            // El precio lo calcula siempre el servidor
-            pedido.PrecioTotal += (campana.PrecioBase + material.Precio) * detalle.Cantidad;
-
-            await _context.SaveChangesAsync();
-
-            TempData["Exito"] = "La lámpara se agregó al pedido.";
-            return RedirectToAction(nameof(Details), new { id = pedido.Id });
-        }
-
-        private async Task CargarListasAsync(DetalleCreateViewModel vm)
-        {
-            var campanas = await _context.MaterialesCampana.OrderBy(c => c.Nombre).ToListAsync();
-            var bases = await _context.MaterialesBase.OrderBy(b => b.TipoMaterial).ToListAsync();
-            var tipos = await _context.TiposLuz.OrderBy(t => t.Id).ToListAsync();
-
-            vm.Campanas = campanas.Select(c => new SelectListItem($"{c.Nombre} - $ {c.PrecioBase:0.00}", c.Id.ToString()));
-            vm.Bases = bases.Select(b => new SelectListItem($"{b.TipoMaterial} - $ {b.Precio:0.00}", b.Id.ToString()));
-            vm.TiposLuz = tipos.Select(t => new SelectListItem(t.Nombre, t.Id.ToString()));
-        }
-
-        // ---------------------------------------------------------------- QUITAR LÁMPARA
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> QuitarDetalle(int pedidoId, int detalleId)
-        {
-            var pedido = await ObtenerPedidoPermitidoAsync(pedidoId, incluirRelaciones: true);
-            if (pedido == null) return NotFound();
-
-            // Mismo criterio que para borrar el pedido: solo en "Pendiente" (el administrador siempre puede)
-            if (!PuedeBorrar(pedido))
-            {
-                TempData["Error"] = "Solo se pueden quitar lámparas de pedidos en estado \"Pendiente\".";
-                return RedirectToAction(nameof(Details), new { id = pedidoId });
-            }
-
-            var detalle = pedido.Detalles.FirstOrDefault(d => d.Id == detalleId);
-            if (detalle == null) return NotFound();
-
-            _context.DetallesPedido.Remove(detalle);
-
-            // El total se recalcula siempre con las lámparas que quedan
-            pedido.PrecioTotal = pedido.Detalles
-                .Where(d => d.Id != detalleId)
-                .Sum(d => ((d.MaterialCampana?.PrecioBase ?? 0) + (d.MaterialBase?.Precio ?? 0)) * d.Cantidad);
-
-            await _context.SaveChangesAsync();
-
-            TempData["Exito"] = "La lámpara se quitó del pedido.";
-            return RedirectToAction(nameof(Details), new { id = pedidoId });
         }
 
         // ---------------------------------------------------------------- ARCHIVOS

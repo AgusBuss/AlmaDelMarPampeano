@@ -167,10 +167,29 @@ namespace AlmaDelMarPampeano.Controllers
                 .FirstOrDefaultAsync(l => l.Id == id);
             if (lampara == null) return NotFound();
 
+            // Una lámpara que ya fue pedida no se puede borrar: el pedido necesita saber qué pieza era.
+            // La base lo impide con una clave foránea Restrict; acá se avisa antes con un mensaje claro.
+            var tienePedidos = await _context.Set<DetallePedido>().AnyAsync(d => d.LamparaId == id);
+            if (tienePedidos)
+            {
+                TempData["Error"] = $"No se puede eliminar \"{lampara.Nombre}\" porque tiene pedidos asociados. " +
+                                    "Para sacarla del catálogo, editala y desmarcá \"Disponible\".";
+                return RedirectToAction(nameof(Index));
+            }
+
             var rutas = lampara.Fotos.Select(f => f.RutaArchivo).ToList();
 
-            _context.Lamparas.Remove(lampara); // sus fotos se borran en cascada
-            await _context.SaveChangesAsync();
+            try
+            {
+                _context.Lamparas.Remove(lampara); // sus fotos se borran en cascada
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                // Red de seguridad: por ejemplo, si justo entró un pedido de esta lámpara
+                TempData["Error"] = "No se pudo eliminar la lámpara porque está en uso. Probá marcarla como no disponible.";
+                return RedirectToAction(nameof(Index));
+            }
 
             foreach (var ruta in rutas) BorrarImagen(ruta);
 
