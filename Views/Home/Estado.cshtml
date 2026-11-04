@@ -1,0 +1,14 @@
+﻿@{
+    ViewData["Title"] = ViewData["Titulo"]?.ToString();
+}
+
+<div class="pagina-error">
+    <p class="pagina-error-codigo">@ViewData["Codigo"]</p>
+    <h1>@ViewData["Titulo"]</h1>
+    <p class="text-muted">@ViewData["Mensaje"]</p>
+
+    <div class="d-flex flex-wrap gap-2 justify-content-center mt-4">
+        <a asp-controller="Catalogo" asp-action="Index" class="btn btn-primary">Ir al inicio</a>
+        <a asp-controller="Catalogo" asp-action="Lamparas" class="btn btn-outline-primary">Ver las lámparas</a>
+    </div>
+</div>

@@ -636,3 +636,19 @@ body {
     color: var(--ap-arena);
     border-top: 1px solid rgba(231, 220, 198, .2);
 }
+
+/* ===== Páginas de error ===== */
+.pagina-error {
+    max-width: 560px;
+    margin: 4rem auto;
+    text-align: center;
+}
+
+.pagina-error-codigo {
+    margin: 0;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(5rem, 18vw, 8rem);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--ap-ocre);
+}

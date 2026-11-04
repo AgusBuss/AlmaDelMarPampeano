@@ -92,6 +92,9 @@ else
     app.UseHsts();
 }
 
+// Páginas de error con la identidad del sitio (404, 403, etc.): se muestran en /Home/Estado
+app.UseStatusCodePagesWithReExecute("/Home/Estado", "?codigo={0}");
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
