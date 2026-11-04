@@ -652,3 +652,7 @@ body {
     line-height: 1;
     color: var(--ap-ocre);
 }
+/* En el celular, un campo con letra menor a 16 px hace que el navegador agrande la pantalla al tocarlo */
+#lumi-entrada {
+    font-size: 16px;
+}
