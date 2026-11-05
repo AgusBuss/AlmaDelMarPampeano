@@ -10,7 +10,7 @@
 <p class="text-muted mb-4">
     @if (esPieza)
     {
-        <text>Completá los datos y confirmá. El taller se pone en contacto para coordinar los detalles.</text>
+        <text>Revisá los datos de la pieza y confirmá. El taller se pone en contacto para coordinar el pago y la entrega.</text>
     }
     else
     {
@@ -29,6 +29,7 @@
 
                     @if (esPieza)
                     {
+                        @* La pieza ya viene definida: no hay nada que elegir, solo se dejan notas *@
                         <input type="hidden" asp-for="LamparaId" />
                     }
                     else
@@ -60,18 +61,15 @@
                             </select>
                             <span asp-validation-for="MaterialBaseId" class="text-danger"></span>
                         </div>
-                    }
 
-                    <div class="mb-3">
-                        <label asp-for="TipoLuzId" class="form-label"></label>
-                        <select asp-for="TipoLuzId" asp-items="Model.TiposLuz" class="form-select">
-                            <option value="">Elegí el tipo de luz...</option>
-                        </select>
-                        <span asp-validation-for="TipoLuzId" class="text-danger"></span>
-                    </div>
+                        <div class="mb-3">
+                            <label asp-for="TipoLuzId" class="form-label"></label>
+                            <select asp-for="TipoLuzId" asp-items="Model.TiposLuz" class="form-select">
+                                <option value="">Elegí el tipo de luz...</option>
+                            </select>
+                            <span asp-validation-for="TipoLuzId" class="text-danger"></span>
+                        </div>
 
-                    @if (!esPieza)
-                    {
                         <div class="mb-3">
                             <label asp-for="Cantidad" class="form-label"></label>
                             <input asp-for="Cantidad" id="cantidad" type="number" min="1" max="10" class="form-control" style="max-width:140px;" />
@@ -79,22 +77,32 @@
                         </div>
                     }
 
-                    <div class="mb-3">
+                    <div class="@(esPieza ? "mb-4" : "mb-3")">
                         <label asp-for="Observaciones" class="form-label"></label>
                         <textarea asp-for="Observaciones" rows="3" class="form-control"
-                                  placeholder="Para qué ambiente es, qué colores te gustan, plazos..."></textarea>
+                                  placeholder="@(esPieza ? "Cómo preferís coordinar la entrega o el retiro, algún comentario..." : "Para qué ambiente es, qué colores te gustan, plazos...")"></textarea>
                         <span asp-validation-for="Observaciones" class="text-danger"></span>
                     </div>
 
-                    <div class="mb-4">
-                        <label asp-for="Referencia" class="form-label"></label>
-                        <input asp-for="Referencia" type="file" class="form-control" accept=".jpg,.jpeg,.png,.pdf" />
-                        <div class="form-text">Formatos: JPG, PNG o PDF. Máximo 5 MB.</div>
-                        <span asp-validation-for="Referencia" class="text-danger"></span>
-                    </div>
+                    @if (!esPieza)
+                    {
+                        <div class="mb-4">
+                            <label asp-for="Referencia" class="form-label"></label>
+                            <input asp-for="Referencia" type="file" class="form-control" accept=".jpg,.jpeg,.png,.pdf" />
+                            <div class="form-text">Formatos: JPG, PNG o PDF. Máximo 5 MB.</div>
+                            <span asp-validation-for="Referencia" class="text-danger"></span>
+                        </div>
+                    }
 
                     <button type="submit" class="btn btn-primary btn-lg">Confirmar pedido</button>
-                    <a asp-action="Index" class="btn btn-outline-secondary btn-lg">Cancelar</a>
+                    @if (esPieza)
+                    {
+                        <a asp-controller="Catalogo" asp-action="Lamparas" class="btn btn-outline-secondary btn-lg">Volver al catálogo</a>
+                    }
+                    else
+                    {
+                        <a asp-action="Index" class="btn btn-outline-secondary btn-lg">Cancelar</a>
+                    }
                 </div>
             </div>
         </div>
@@ -121,6 +129,10 @@
                             <strong>Campana:</strong> @Model.Lampara.MaterialCampana?.Nombre<br />
                             <strong>Base:</strong> @Model.Lampara.MaterialBase?.TipoMaterial
                         </p>
+                        @if (!string.IsNullOrWhiteSpace(Model.Lampara.Descripcion))
+                        {
+                            <p class="small">@Model.Lampara.Descripcion</p>
+                        }
                         <div class="d-flex justify-content-between align-items-baseline border-top pt-3">
                             <span>Precio de la pieza</span>
                             <span class="fs-4 fw-semibold">$ @Model.Lampara.Precio.ToString("N2")</span>

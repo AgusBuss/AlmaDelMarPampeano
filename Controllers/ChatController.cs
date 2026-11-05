@@ -121,21 +121,21 @@ namespace AlmaDelMarPampeano.Controllers
                 var pieza = l.NumeroPieza != null ? $"pieza N.º {l.NumeroPieza}, " : "";
                 sb.AppendLine($"- {l.Nombre} ({pieza}colección {l.Coleccion?.Nombre}, campana {l.MaterialCampana?.Nombre}, base {l.MaterialBase?.TipoMaterial}): $ {l.Precio:N2}");
             }
-            sb.AppendLine("Las piezas vendidas ya no se pueden pedir. Como cada una es única, una vez vendida no vuelve a estar disponible.");
+            sb.AppendLine("Las piezas no disponibles (reservadas por un pedido o ya vendidas) no se pueden pedir. Como cada una es única, si un pedido se cancela la pieza vuelve a estar disponible.");
             sb.AppendLine();
 
             sb.AppendLine("CÓMO PEDIR EN EL SITIO (cada pedido es de UNA lámpara):");
             sb.AppendLine("Opción A, una pieza del catálogo:");
             sb.AppendLine("1. Entrar a \"Lámparas\" en el menú y elegir una pieza disponible.");
             sb.AppendLine("2. Tocar \"Quiero esta lámpara\". Si todavía no inició sesión, el sitio le pide ingresar o crear una cuenta.");
-            sb.AppendLine("3. Elegir el tipo de luz, dejar una nota si quiere, y confirmar. El precio es el de la pieza, tal como se ve en el catálogo.");
+            sb.AppendLine("3. Dejar una nota si quiere y confirmar. La pieza ya viene terminada, con su campana y su base, así que no hay nada que elegir. El precio es el de la pieza, tal como se ve en el catálogo.");
             sb.AppendLine("Opción B, una lámpara a medida:");
             sb.AppendLine("1. Ingresar o crear una cuenta, entrar a \"Pedidos\" y tocar \"Pedir una lámpara a medida\" (también hay un botón en el catálogo).");
             sb.AppendLine("2. Elegir la campana, la base, el tipo de luz y la cantidad. Se puede contar la idea en las observaciones y subir una imagen de referencia (JPG, PNG o PDF, hasta 5 MB).");
             sb.AppendLine("3. El precio estimado es la campana más la base, multiplicado por la cantidad, y el sitio lo calcula solo mientras se elige.");
             sb.AppendLine();
             sb.AppendLine("DESPUÉS DE PEDIR:");
-            sb.AppendLine("- El taller se pone en contacto para confirmar el precio final, el plazo y la forma de pago. En el sitio todavía no se paga online.");
+            sb.AppendLine("- El taller se pone en contacto para confirmar el precio final y el plazo. El pago se hace por transferencia bancaria: los datos para transferir (alias y titular) aparecen dentro del pedido, y ahí mismo se sube el comprobante para que el taller lo confirme. No se paga online dentro del sitio. Nunca inventes un alias ni un CBU.");
             sb.AppendLine("- En \"Pedidos\" se ve cada pedido con una barra de avance. Los estados son: Pendiente, En producción, Terminado, Entregado y Cancelado.");
             sb.AppendLine("- Mientras el pedido está Pendiente, la persona puede editar sus notas o cancelarlo. Después de eso ya no se puede modificar desde el sitio.");
             sb.AppendLine("- Si olvidó su contraseña, tiene que pedirle al taller una contraseña temporal.");

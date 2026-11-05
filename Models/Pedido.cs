@@ -29,5 +29,6 @@ namespace AlmaDelMarPampeano.Models
         // Relaciones 1 a muchos
         public List<DetallePedido> Detalles { get; set; } = new List<DetallePedido>();
         public List<ArchivoAdjunto> Archivos { get; set; } = new List<ArchivoAdjunto>();
+        public List<Pago> Pagos { get; set; } = new List<Pago>();
     }
 }

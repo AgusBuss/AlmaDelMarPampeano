@@ -30,6 +30,7 @@ namespace AlmaDelMarPampeano.Data
         public DbSet<Lampara> Lamparas { get; set; }
         public DbSet<Coleccion> Colecciones { get; set; }
         public DbSet<FotoLampara> FotosLampara { get; set; }
+        public DbSet<Pago> Pagos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -91,6 +92,13 @@ namespace AlmaDelMarPampeano.Data
             .WithMany()
             .HasForeignKey(d => d.LamparaId)
             .OnDelete(DeleteBehavior.Restrict);
+
+            // Los pagos pertenecen al pedido: si se borra el pedido, se borran sus pagos
+            builder.Entity<Pago>()
+                .HasOne(p => p.Pedido)
+                .WithMany(p => p.Pagos)
+                .HasForeignKey(p => p.PedidoId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
 
         // ------------------------------------------------------------------
@@ -104,6 +112,7 @@ namespace AlmaDelMarPampeano.Data
             { typeof(Pedido), "Pedido" },
             { typeof(DetallePedido), "Detalle de pedido" },
             { typeof(ArchivoAdjunto), "Archivo adjunto" },
+            { typeof(Pago), "Pago" },
             { typeof(MaterialCampana), "Campana" },
             { typeof(MaterialBase), "Base" },
             { typeof(EstadoPedido), "Estado de pedido" },

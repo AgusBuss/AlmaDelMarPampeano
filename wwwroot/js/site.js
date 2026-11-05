@@ -30,7 +30,7 @@ document.addEventListener('submit', function (evento) {
         customClass: {
             popup: 'swal-marca',
             title: 'swal-marca-titulo',
-            confirmButton: 'btn btn-danger mx-1',
+            confirmButton: 'btn ' + (formulario.dataset.botonClase || 'btn-danger') + ' mx-1',
             cancelButton: 'btn btn-outline-secondary mx-1'
         }
     }).then(function (resultado) {

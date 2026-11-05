@@ -295,6 +295,49 @@ namespace AlmaDelMarPampeano.Migrations
                     b.ToTable("MaterialesCampana");
                 });
 
+            modelBuilder.Entity("AlmaDelMarPampeano.Models.Pago", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime>("FechaInformado")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("Monto")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("MotivoRechazo")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("NombreComprobante")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("PedidoId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RutaComprobante")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PedidoId");
+
+                    b.ToTable("Pagos");
+                });
+
             modelBuilder.Entity("AlmaDelMarPampeano.Models.Pedido", b =>
                 {
                     b.Property<int>("Id")
@@ -638,6 +681,17 @@ namespace AlmaDelMarPampeano.Migrations
                     b.Navigation("MaterialCampana");
                 });
 
+            modelBuilder.Entity("AlmaDelMarPampeano.Models.Pago", b =>
+                {
+                    b.HasOne("AlmaDelMarPampeano.Models.Pedido", "Pedido")
+                        .WithMany("Pagos")
+                        .HasForeignKey("PedidoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Pedido");
+                });
+
             modelBuilder.Entity("AlmaDelMarPampeano.Models.Pedido", b =>
                 {
                     b.HasOne("AlmaDelMarPampeano.Models.EstadoPedido", "EstadoPedido")
@@ -710,6 +764,8 @@ namespace AlmaDelMarPampeano.Migrations
                     b.Navigation("Archivos");
 
                     b.Navigation("Detalles");
+
+                    b.Navigation("Pagos");
                 });
 #pragma warning restore 612, 618
         }

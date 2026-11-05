@@ -1,4 +1,6 @@
 ﻿@using Microsoft.AspNetCore.Mvc.Rendering
+@using AlmaDelMarPampeano.Models
+@inject IConfiguration Configuracion
 @model AlmaDelMarPampeano.Models.Pedido
 
 @{
@@ -16,6 +18,22 @@
         : nombreEstado.Contains("termin") ? "Tu lámpara está lista. El taller te contacta para coordinar la entrega o el retiro."
         : nombreEstado.Contains("produc") ? "Tu lámpara se está haciendo. Cada pieza lleva su tiempo."
         : "Recibimos tu pedido. El taller se pone en contacto para confirmar el precio, el plazo y la forma de pago.";
+
+    // ----- Pagos -----
+    var alias = (Configuracion["Pago:Alias"] ?? "").Trim();
+    var titular = (Configuracion["Pago:Titular"] ?? "").Trim();
+    var porcentajeSena = Configuracion.GetValue<int?>("Pago:PorcentajeSena") ?? 50;
+
+    var confirmado = Model.Pagos.Where(p => p.Estado == EstadosPago.Confirmado).Sum(p => p.Monto);
+    var saldo = Math.Max(0, Model.PrecioTotal - confirmado);
+    var senaSugerida = Math.Min(saldo, Math.Round(Model.PrecioTotal * porcentajeSena / 100m, 2));
+    var montoSugerido = confirmado > 0 ? saldo : senaSugerida; // si ya hay una seña, se sugiere el resto
+    var puedeInformarPago = !cancelado && saldo > 0;
+
+    string ClasePago(string estado) =>
+        estado == EstadosPago.Confirmado ? "estado-terminado"
+        : estado == EstadosPago.Rechazado ? "estado-cancelado"
+        : "estado-pendiente";
 }
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
@@ -83,8 +101,11 @@ else
                                 <dd class="col-7 col-sm-8">@d.MaterialCampana?.Nombre</dd>
                                 <dt class="col-5 col-sm-4">Base</dt>
                                 <dd class="col-7 col-sm-8">@d.MaterialBase?.TipoMaterial</dd>
-                                <dt class="col-5 col-sm-4">Tipo de luz</dt>
-                                <dd class="col-7 col-sm-8">@(d.TipoLuz?.Nombre ?? "—")</dd>
+                                @if (d.TipoLuz != null)
+                                {
+                                    <dt class="col-5 col-sm-4">Tipo de luz</dt>
+                                    <dd class="col-7 col-sm-8">@d.TipoLuz.Nombre</dd>
+                                }
                                 <dt class="col-5 col-sm-4">Cantidad</dt>
                                 <dd class="col-7 col-sm-8">@d.Cantidad</dd>
                             </dl>
@@ -103,6 +124,105 @@ else
                 </div>
             </div>
         }
+
+        @* ===== Pago ===== *@
+        <div class="card mb-3">
+            <div class="card-body">
+                <h2 class="h5">Pago</h2>
+
+                @if (puedeInformarPago)
+                {
+                    <div class="alert alert-info">
+                        @if (alias != "")
+                        {
+                            <p class="mb-1"><strong>Alias:</strong> <span class="user-select-all">@alias</span></p>
+                            @if (titular != "")
+                            {
+                                <p class="mb-1"><strong>Titular:</strong> @titular</p>
+                            }
+                            <p class="mb-2">
+                                <strong>@(confirmado > 0 ? "Saldo a pagar" : $"Seña sugerida ({porcentajeSena} %)"):</strong>
+                                $ @montoSugerido.ToString("N2")
+                            </p>
+                            <p class="small mb-0">Transferí al alias y subí acá el comprobante. El taller lo revisa y lo confirma.</p>
+                        }
+                        else
+                        {
+                            <p class="mb-0">El taller te va a pasar los datos para pagar. Cuando transfieras, subí acá el comprobante.</p>
+                        }
+                    </div>
+
+                    <form asp-action="InformarPago" method="post" enctype="multipart/form-data" class="row g-2 align-items-end mb-3">
+                        <input type="hidden" name="pedidoId" value="@Model.Id" />
+                        <div class="col-sm-4">
+                            <label class="form-label small mb-1" for="monto">Monto transferido ($)</label>
+                            <input id="monto" name="monto" type="text" inputmode="decimal" class="form-control"
+                                   value="@montoSugerido.ToString("N2")" required />
+                        </div>
+                        <div class="col-sm">
+                            <label class="form-label small mb-1" for="comprobante">Comprobante (JPG, PNG o PDF, máx. 5 MB)</label>
+                            <input id="comprobante" name="comprobante" type="file" class="form-control" accept=".jpg,.jpeg,.png,.pdf" required />
+                        </div>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-primary">@(esAdmin ? "Registrar pago" : "Informar pago")</button>
+                        </div>
+                    </form>
+                }
+                else if (!cancelado && Model.Pagos.Any(p => p.Estado == EstadosPago.Confirmado))
+                {
+                    <div class="alert alert-success mb-3">El pedido está pagado por completo. ¡Gracias!</div>
+                }
+
+                @if (!Model.Pagos.Any())
+                {
+                    <p class="text-muted small mb-0">Todavía no hay pagos informados.</p>
+                }
+                else
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var p in Model.Pagos.OrderByDescending(x => x.FechaInformado))
+                        {
+                            <li class="list-group-item px-0">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                    <span>
+                                        <strong>$ @p.Monto.ToString("N2")</strong>
+                                        <span class="text-muted small ms-2">@p.FechaInformado.ToString("dd/MM/yyyy HH:mm")</span>
+                                    </span>
+                                    <span class="d-flex align-items-center gap-2">
+                                        <a asp-action="Comprobante" asp-route-id="@p.Id" target="_blank" rel="noopener" class="small">Ver comprobante</a>
+                                        <span class="estado @ClasePago(p.Estado)">@p.Estado</span>
+                                    </span>
+                                </div>
+
+                                @if (p.Estado == EstadosPago.Rechazado && !string.IsNullOrWhiteSpace(p.MotivoRechazo))
+                                {
+                                    <p class="small text-danger mb-0 mt-1">Motivo: @p.MotivoRechazo</p>
+                                }
+
+                                @if (esAdmin && p.Estado == EstadosPago.Pendiente)
+                                {
+                                    <div class="d-flex flex-wrap gap-2 mt-2">
+                                        <form asp-action="ConfirmarPago" asp-route-id="@p.Id" method="post" class="form-eliminar"
+                                              data-titulo="¿Confirmar el pago?"
+                                              data-mensaje="Vas a confirmar $ @p.Monto.ToString("N2") en el pedido #@Model.Id."
+                                              data-boton="Sí, confirmar pago"
+                                              data-volver="Volver"
+                                              data-boton-clase="btn-success">
+                                            <button type="submit" class="btn btn-sm btn-success">Confirmar</button>
+                                        </form>
+                                        <form asp-action="RechazarPago" asp-route-id="@p.Id" method="post" class="d-flex gap-2 flex-grow-1">
+                                            <input name="motivo" type="text" maxlength="300" required class="form-control form-control-sm"
+                                                   placeholder="Motivo del rechazo" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Rechazar</button>
+                                        </form>
+                                    </div>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
 
         @* ===== Archivos ===== *@
         <div class="card mb-3">
@@ -166,6 +286,14 @@ else
                 <div class="d-flex justify-content-between align-items-baseline border-top pt-3">
                     <span>Total</span>
                     <span class="fs-4 fw-semibold">$ @Model.PrecioTotal.ToString("N2")</span>
+                </div>
+                <div class="d-flex justify-content-between small mt-2">
+                    <span>Pagado (confirmado)</span>
+                    <span>$ @confirmado.ToString("N2")</span>
+                </div>
+                <div class="d-flex justify-content-between small">
+                    <span>Falta pagar</span>
+                    <span class="fw-semibold">$ @saldo.ToString("N2")</span>
                 </div>
                 <p class="text-muted small mt-2">El taller confirma el precio final y los plazos.</p>
 

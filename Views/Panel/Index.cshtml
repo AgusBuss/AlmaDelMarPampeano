@@ -1,0 +1,187 @@
+﻿@model AlmaDelMarPampeano.ViewModels.PanelViewModel
+
+@{
+    ViewData["Title"] = "Panel";
+    var maximo = Model.PorEstado.Any() ? Math.Max(1, Model.PorEstado.Max(e => e.Cantidad)) : 1;
+    var periodos = new[] { (7, "7 días"), (30, "30 días"), (90, "90 días"), (0, "Todo") };
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
+    <h1 class="mb-0">Panel</h1>
+    <ul class="nav nav-pills gap-1">
+        @foreach (var (valor, texto) in periodos)
+        {
+            <li class="nav-item">
+                <a class="nav-link @(Model.Dias == valor ? "active" : "")" asp-action="Index" asp-route-dias="@valor">@texto</a>
+            </li>
+        }
+    </ul>
+</div>
+<p class="seccion-sub">Resumen de @Model.Periodo.</p>
+
+@* ===== Números principales ===== *@
+<div class="row row-cols-2 row-cols-lg-4 g-3 mb-4">
+    <div class="col">
+        <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">Pedidos</div>
+            <div class="dato-valor">@Model.TotalPedidos</div>
+            <div class="small text-muted">@Model.PedidosCatalogo del catálogo · @Model.PedidosMedida a medida</div>
+        </div></div>
+    </div>
+    <div class="col">
+        <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">Ventas estimadas</div>
+            <div class="dato-valor">$ @Model.VentasEstimadas.ToString("N0")</div>
+            <div class="small text-muted">Sin contar cancelados</div>
+        </div></div>
+    </div>
+    <div class="col">
+        <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">Cobrado</div>
+            <div class="dato-valor">$ @Model.Cobrado.ToString("N0")</div>
+            <div class="small text-muted">Pagos confirmados</div>
+        </div></div>
+    </div>
+    <div class="col">
+        <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">Pagos por revisar</div>
+            <div class="dato-valor">@Model.PagosPorRevisar</div>
+            <a asp-controller="Pedidos" asp-action="Index" class="small">Ver pedidos</a>
+        </div></div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    @* ===== Pedidos por estado ===== *@
+    <div class="col-lg-6">
+        <div class="card h-100"><div class="card-body">
+            <h2 class="h5">Pedidos por estado</h2>
+            @foreach (var e in Model.PorEstado)
+            {
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between small">
+                        <span>@e.Nombre</span>
+                        <strong>@e.Cantidad</strong>
+                    </div>
+                    <div class="barra"><div class="barra-relleno @e.Clase" style="width:@((e.Cantidad * 100) / maximo)%"></div></div>
+                </div>
+            }
+        </div></div>
+    </div>
+
+    @* ===== Catálogo ===== *@
+    <div class="col-lg-6">
+        <div class="card h-100"><div class="card-body">
+            <h2 class="h5">Catálogo</h2>
+            <p class="small mb-3">
+                <strong>@Model.LamparasDisponibles</strong> lámparas disponibles ·
+                <strong>@Model.LamparasNoDisponibles</strong> reservadas o vendidas
+            </p>
+
+            <h3 class="h6">Colecciones más pedidas</h3>
+            @if (!Model.ColeccionesTop.Any())
+            {
+                <p class="text-muted small">Todavía sin pedidos de piezas.</p>
+            }
+            else
+            {
+                <ul class="list-unstyled small mb-3">
+                    @foreach (var c in Model.ColeccionesTop)
+                    {
+                        <li class="d-flex justify-content-between"><span>@c.Nombre</span><strong>@c.Cantidad</strong></li>
+                    }
+                </ul>
+            }
+
+            <h3 class="h6">Campanas más elegidas</h3>
+            @if (!Model.CampanasTop.Any())
+            {
+                <p class="text-muted small mb-0">Sin datos todavía.</p>
+            }
+            else
+            {
+                <ul class="list-unstyled small mb-0">
+                    @foreach (var c in Model.CampanasTop)
+                    {
+                        <li class="d-flex justify-content-between"><span>@c.Nombre</span><strong>@c.Cantidad</strong></li>
+                    }
+                </ul>
+            }
+        </div></div>
+    </div>
+</div>
+
+@* ===== Reporte con IA ===== *@
+<div class="card mb-4" id="reporte">
+    <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div>
+                <h2 class="h5 mb-1">Reporte con IA</h2>
+                <p class="text-muted small mb-0">Un resumen en palabras de @Model.Periodo, redactado por la IA a partir de los números de este panel.</p>
+            </div>
+            <form id="form-reporte" asp-action="Reporte" asp-fragment="reporte" method="post">
+                <input type="hidden" name="dias" value="@Model.Dias" />
+                <button id="btn-reporte" type="submit" class="btn btn-primary">Generar reporte</button>
+            </form>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Reporte))
+        {
+            <div class="reporte-ia mt-3">@Model.Reporte</div>
+            <p class="text-muted small mt-2 mb-0">Generado por IA. Revisalo antes de usarlo: puede equivocarse.</p>
+        }
+    </div>
+</div>
+
+@* ===== Actividad del sistema ===== *@
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="h5 mb-1">Actividad del sistema</h2>
+            <a asp-controller="Auditoria" asp-action="Index" class="small">Ver la auditoría completa</a>
+        </div>
+        <p class="text-muted small">@Model.TotalOperaciones operaciones registradas por @Model.UsuariosActivos usuarios.</p>
+
+        @if (!Model.Actividad.Any())
+        {
+            <p class="text-muted small mb-0">No hay actividad en este período.</p>
+        }
+        else
+        {
+            <div class="row g-4">
+                <div class="col-md-5">
+                    <h3 class="h6">Lo más frecuente</h3>
+                    <ul class="list-unstyled small mb-0">
+                        @foreach (var a in Model.Actividad)
+                        {
+                            <li class="d-flex justify-content-between"><span>@a.Nombre</span><strong>@a.Cantidad</strong></li>
+                        }
+                    </ul>
+                </div>
+                <div class="col-md-7">
+                    <h3 class="h6">Últimas acciones</h3>
+                    <ul class="list-unstyled small mb-0">
+                        @foreach (var linea in Model.UltimasAcciones)
+                        {
+                            <li class="mb-1">@linea</li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // La IA tarda unos segundos: se avisa y se evita el doble clic
+        var formulario = document.getElementById('form-reporte');
+        if (formulario) {
+            formulario.addEventListener('submit', function () {
+                var boton = document.getElementById('btn-reporte');
+                boton.disabled = true;
+                boton.textContent = 'Generando reporte...';
+            });
+        }
+    </script>
+}

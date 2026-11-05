@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.RegularExpressions;
 using AlmaDelMarPampeano.Data;
 using AlmaDelMarPampeano.Models;
 using AlmaDelMarPampeano.ViewModels;
@@ -15,8 +17,13 @@ namespace AlmaDelMarPampeano.Controllers
         private const string EstadoInicial = "Pendiente";
         private const string EstadoCancelado = "Cancelado";
         private const long TamanoMaximoArchivo = 5 * 1024 * 1024; // 5 MB
+        private const int MaximoPagosPendientes = 3;              // evita llenar un pedido de comprobantes sin revisar
         private static readonly string[] ExtensionesPermitidas = { ".jpg", ".jpeg", ".png", ".pdf" };
         private static readonly string[] TiposDocumento = { "Referencia", "Comprobante", "Presupuesto" };
+
+        // Montos en formato argentino: 25000, 25000,50 o 25.000,50 (mismo criterio que el formulario)
+        private static readonly Regex FormatoMonto = new(@"^(?:\d+|\d{1,3}(?:\.\d{3})+)(?:,\d{1,2})?$");
+        private static readonly CultureInfo CulturaAr = new("es-AR");
 
         private readonly ApplicationDbContext _context;
         private readonly UserManager<IdentityUser> _userManager;
@@ -30,6 +37,10 @@ namespace AlmaDelMarPampeano.Controllers
         }
 
         private bool EsAdmin => User.IsInRole("Administrador");
+
+        // Los comprobantes de pago NO están en wwwroot: no se pueden abrir con solo conocer la dirección.
+        // Se entregan por la acción Comprobante, que verifica quién los pide.
+        private string CarpetaComprobantes => Path.Combine(_webHostEnvironment.ContentRootPath, "App_Data", "comprobantes");
 
         /// <summary>
         /// ÚNICO punto de acceso a un pedido por id: el Administrador ve cualquiera,
@@ -46,7 +57,8 @@ namespace AlmaDelMarPampeano.Controllers
                     .Include(p => p.Detalles).ThenInclude(d => d.MaterialBase)
                     .Include(p => p.Detalles).ThenInclude(d => d.TipoLuz)
                     .Include(p => p.Detalles).ThenInclude(d => d.Lampara).ThenInclude(l => l!.Fotos)
-                    .Include(p => p.Archivos);
+                    .Include(p => p.Archivos)
+                    .Include(p => p.Pagos);
             }
 
             if (!EsAdmin)
@@ -60,6 +72,42 @@ namespace AlmaDelMarPampeano.Controllers
 
         // El borrado definitivo es solo del administrador; el cliente cancela (ver acción Cancelar)
         private bool PuedeBorrar(Pedido pedido) => EsAdmin;
+
+        // ---------------------------------------------------------------- DISPONIBILIDAD DE PIEZAS
+        // Cada pieza del catálogo es única. Regla: una pieza está disponible solo si no tiene
+        // ningún pedido vigente (es decir, ninguno que no esté cancelado). Se recalcula siempre
+        // desde los pedidos, así nunca queda desincronizada. Los cambios quedan en la auditoría.
+        private async Task ActualizarDisponibilidadAsync(IEnumerable<int> lamparaIds)
+        {
+            var ids = lamparaIds.Distinct().ToList();
+            if (ids.Count == 0) return;
+
+            var cancelado = await _context.EstadosPedido.FirstOrDefaultAsync(e => e.NombreEstado == EstadoCancelado);
+            var canceladoId = cancelado?.Id ?? 0;
+
+            foreach (var id in ids)
+            {
+                var lampara = await _context.Lamparas.FindAsync(id);
+                if (lampara == null) continue;
+
+                var tienePedidoVigente = await _context.Pedidos.AnyAsync(p =>
+                    p.EstadoPedidoId != canceladoId && p.Detalles.Any(d => d.LamparaId == id));
+
+                lampara.Disponible = !tienePedidoVigente;
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        private async Task<List<int>> LamparasDelPedidoAsync(int pedidoId)
+        {
+            return await _context.Pedidos
+                .Where(p => p.Id == pedidoId)
+                .SelectMany(p => p.Detalles)
+                .Where(d => d.LamparaId != null)
+                .Select(d => d.LamparaId ?? 0)
+                .ToListAsync();
+        }
 
         // ---------------------------------------------------------------- LISTADO
         public async Task<IActionResult> Index(int? estadoId)
@@ -145,6 +193,7 @@ namespace AlmaDelMarPampeano.Controllers
                 ModelState.Remove(nameof(vm.MaterialCampanaId));
                 ModelState.Remove(nameof(vm.MaterialBaseId));
                 ModelState.Remove(nameof(vm.Cantidad));
+                ModelState.Remove(nameof(vm.TipoLuzId));
                 vm.MaterialCampanaId = lampara.MaterialCampanaId;
                 vm.MaterialBaseId = lampara.MaterialBaseId;
                 vm.Cantidad = 1;
@@ -167,13 +216,19 @@ namespace AlmaDelMarPampeano.Controllers
             var estado = await _context.EstadosPedido.FirstOrDefaultAsync(e => e.NombreEstado == EstadoInicial);
             var campana = await _context.MaterialesCampana.FindAsync(vm.MaterialCampanaId!.Value);
             var material = await _context.MaterialesBase.FindAsync(vm.MaterialBaseId!.Value);
-            var tipoLuz = await _context.TiposLuz.FindAsync(vm.TipoLuzId!.Value);
+
+            // El tipo de luz solo se elige en las lámparas a medida; las piezas del catálogo ya vienen definidas
+            TipoLuz? tipoLuz = null;
+            if (lampara == null)
+            {
+                tipoLuz = await _context.TiposLuz.FindAsync(vm.TipoLuzId!.Value);
+            }
 
             if (estado == null)
             {
                 ModelState.AddModelError(string.Empty, "No se pudo crear el pedido porque falta el estado inicial \"Pendiente\". Avisá al administrador.");
             }
-            else if (campana == null || material == null || tipoLuz == null)
+            else if (campana == null || material == null || (lampara == null && tipoLuz == null))
             {
                 ModelState.AddModelError(string.Empty, "Alguna de las opciones elegidas ya no existe. Probá de nuevo.");
             }
@@ -203,13 +258,19 @@ namespace AlmaDelMarPampeano.Controllers
             {
                 MaterialCampanaId = campana!.Id,
                 MaterialBaseId = material!.Id,
-                TipoLuzId = tipoLuz!.Id,
+                TipoLuzId = tipoLuz?.Id,
                 LamparaId = lampara?.Id,
                 Cantidad = vm.Cantidad
             });
 
             _context.Pedidos.Add(pedido);
             await _context.SaveChangesAsync();
+
+            // La pieza pedida queda reservada: deja de estar disponible para otros clientes
+            if (lampara != null)
+            {
+                await ActualizarDisponibilidadAsync(new[] { lampara.Id });
+            }
 
             if (vm.Referencia != null && vm.Referencia.Length > 0)
             {
@@ -283,6 +344,9 @@ namespace AlmaDelMarPampeano.Controllers
             pedido.EstadoPedidoId = estado.Id;
             await _context.SaveChangesAsync(); // la auditoría queda registrada sola
 
+            // Si el pedido se cancela (o se reactiva), la pieza se libera (o se reserva) sola
+            await ActualizarDisponibilidadAsync(await LamparasDelPedidoAsync(id));
+
             TempData["Exito"] = $"El pedido #{id} pasó a \"{estado.NombreEstado}\".";
             return RedirectToAction(nameof(Details), new { id });
         }
@@ -311,8 +375,174 @@ namespace AlmaDelMarPampeano.Controllers
             pedido.EstadoPedidoId = cancelado.Id;
             await _context.SaveChangesAsync(); // queda en la auditoría
 
+            // La pieza reservada vuelve a estar disponible
+            await ActualizarDisponibilidadAsync(await LamparasDelPedidoAsync(id));
+
             TempData["Exito"] = $"Tu pedido #{id} fue cancelado.";
             return RedirectToAction(nameof(Details), new { id });
+        }
+
+        // ---------------------------------------------------------------- PAGOS
+        // El cliente transfiere por fuera del sitio y acá informa el pago subiendo el comprobante.
+        // El administrador lo revisa y lo confirma o lo rechaza. Si lo informa el propio
+        // administrador (por ejemplo, un pago recibido en mano), queda confirmado directamente.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> InformarPago(int pedidoId, string? monto, IFormFile? comprobante)
+        {
+            var pedido = await ObtenerPedidoPermitidoAsync(pedidoId, incluirRelaciones: true);
+            if (pedido == null) return NotFound();
+
+            string? error = null;
+
+            var confirmado = pedido.Pagos.Where(p => p.Estado == EstadosPago.Confirmado).Sum(p => p.Monto);
+            var saldo = pedido.PrecioTotal - confirmado;
+            var texto = monto?.Trim() ?? string.Empty;
+            decimal valor = 0;
+
+            if (pedido.EstadoPedido?.NombreEstado == EstadoCancelado)
+            {
+                error = "El pedido está cancelado: no se pueden informar pagos.";
+            }
+            else if (saldo <= 0)
+            {
+                error = "Este pedido ya está pagado por completo.";
+            }
+            else if (pedido.Pagos.Count(p => p.Estado == EstadosPago.Pendiente) >= MaximoPagosPendientes)
+            {
+                error = "Ya hay pagos esperando revisión. Esperá a que el taller los confirme.";
+            }
+            else if (!FormatoMonto.IsMatch(texto)
+                     || !decimal.TryParse(texto, NumberStyles.Number, CulturaAr, out valor)
+                     || valor <= 0)
+            {
+                error = "Ingresá un monto válido, por ejemplo 25000 o 25.000,50.";
+            }
+            else if (valor > saldo)
+            {
+                error = $"El monto no puede superar lo que falta pagar ($ {saldo:N2}).";
+            }
+            else if (comprobante == null || comprobante.Length == 0)
+            {
+                error = "Subí el comprobante de la transferencia.";
+            }
+            else
+            {
+                error = ValidarArchivo(comprobante);
+            }
+
+            if (error != null)
+            {
+                TempData["Error"] = error;
+                return RedirectToAction(nameof(Details), new { id = pedidoId });
+            }
+
+            var nombreOriginal = Path.GetFileName(comprobante!.FileName);
+            if (nombreOriginal.Length > 300) nombreOriginal = nombreOriginal[..300];
+
+            _context.Pagos.Add(new Pago
+            {
+                PedidoId = pedido.Id,
+                Monto = valor,
+                FechaInformado = DateTime.Now,
+                NombreComprobante = nombreOriginal,
+                RutaComprobante = await GuardarComprobanteAsync(comprobante), // solo el nombre del archivo en disco
+                Estado = EsAdmin ? EstadosPago.Confirmado : EstadosPago.Pendiente
+            });
+            await _context.SaveChangesAsync();
+
+            TempData["Exito"] = EsAdmin
+                ? "El pago se registró y quedó confirmado."
+                : "Recibimos tu comprobante. El taller lo va a revisar y confirmar.";
+            return RedirectToAction(nameof(Details), new { id = pedidoId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador")]
+        public async Task<IActionResult> ConfirmarPago(int id)
+        {
+            var pago = await _context.Pagos.FirstOrDefaultAsync(p => p.Id == id);
+            if (pago == null) return NotFound();
+
+            if (pago.Estado != EstadosPago.Pendiente)
+            {
+                TempData["Error"] = "Este pago ya fue revisado.";
+                return RedirectToAction(nameof(Details), new { id = pago.PedidoId });
+            }
+
+            pago.Estado = EstadosPago.Confirmado;
+            pago.MotivoRechazo = null;
+            await _context.SaveChangesAsync(); // queda en la auditoría
+
+            TempData["Exito"] = "El pago se confirmó.";
+            return RedirectToAction(nameof(Details), new { id = pago.PedidoId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador")]
+        public async Task<IActionResult> RechazarPago(int id, string? motivo)
+        {
+            var pago = await _context.Pagos.FirstOrDefaultAsync(p => p.Id == id);
+            if (pago == null) return NotFound();
+
+            if (pago.Estado != EstadosPago.Pendiente)
+            {
+                TempData["Error"] = "Este pago ya fue revisado.";
+                return RedirectToAction(nameof(Details), new { id = pago.PedidoId });
+            }
+
+            var texto = motivo?.Trim() ?? string.Empty;
+            if (texto.Length == 0 || texto.Length > 300)
+            {
+                TempData["Error"] = "Indicá el motivo del rechazo (hasta 300 caracteres).";
+                return RedirectToAction(nameof(Details), new { id = pago.PedidoId });
+            }
+
+            pago.Estado = EstadosPago.Rechazado;
+            pago.MotivoRechazo = texto;
+            await _context.SaveChangesAsync(); // queda en la auditoría
+
+            TempData["Exito"] = "El pago se rechazó. El cliente va a ver el motivo.";
+            return RedirectToAction(nameof(Details), new { id = pago.PedidoId });
+        }
+
+        // Entrega el comprobante solo a su dueño o al administrador (la carpeta no es pública)
+        [HttpGet]
+        public async Task<IActionResult> Comprobante(int id)
+        {
+            var pago = await _context.Pagos.Include(p => p.Pedido).FirstOrDefaultAsync(p => p.Id == id);
+            if (pago == null) return NotFound();
+
+            if (!EsAdmin && pago.Pedido?.UsuarioId != _userManager.GetUserId(User))
+            {
+                return NotFound();
+            }
+
+            var ruta = Path.Combine(CarpetaComprobantes, Path.GetFileName(pago.RutaComprobante));
+            if (!System.IO.File.Exists(ruta)) return NotFound();
+
+            var tipo = Path.GetExtension(ruta).ToLowerInvariant() switch
+            {
+                ".pdf" => "application/pdf",
+                ".png" => "image/png",
+                _ => "image/jpeg"
+            };
+            return PhysicalFile(ruta, tipo);
+        }
+
+        private async Task<string> GuardarComprobanteAsync(IFormFile archivo)
+        {
+            Directory.CreateDirectory(CarpetaComprobantes);
+
+            // El nombre en disco lo genera el servidor (nunca se usa el que manda el usuario)
+            var nombre = Guid.NewGuid().ToString("N") + Path.GetExtension(archivo.FileName).ToLowerInvariant();
+            using (var stream = new FileStream(Path.Combine(CarpetaComprobantes, nombre), FileMode.Create))
+            {
+                await archivo.CopyToAsync(stream);
+            }
+            return nombre;
         }
 
         // ---------------------------------------------------------------- EDITAR
@@ -372,6 +602,12 @@ namespace AlmaDelMarPampeano.Controllers
 
             await _context.SaveChangesAsync();
 
+            // El administrador también puede cambiar el estado desde acá: se recalcula la disponibilidad
+            if (EsAdmin)
+            {
+                await ActualizarDisponibilidadAsync(await LamparasDelPedidoAsync(pedido.Id));
+            }
+
             TempData["Exito"] = "Los cambios del pedido se guardaron correctamente.";
             return RedirectToAction(nameof(Details), new { id = pedido.Id });
         }
@@ -418,10 +654,22 @@ namespace AlmaDelMarPampeano.Controllers
                 .Select(a => Path.Combine(_webHostEnvironment.WebRootPath, "adjuntos", Path.GetFileName(a.RutaArchivo)))
                 .ToList();
 
-            _context.Pedidos.Remove(pedido); // los detalles y adjuntos se eliminan en cascada
+            var rutasComprobantes = pedido.Pagos
+                .Select(p => Path.Combine(CarpetaComprobantes, Path.GetFileName(p.RutaComprobante)))
+                .ToList();
+
+            // Se guardan las piezas del pedido antes de borrarlo, para liberarlas después
+            var lamparaIds = pedido.Detalles
+                .Where(d => d.LamparaId != null)
+                .Select(d => d.LamparaId!.Value)
+                .ToList();
+
+            _context.Pedidos.Remove(pedido); // los detalles, adjuntos y pagos se eliminan en cascada
             await _context.SaveChangesAsync();
 
-            foreach (var ruta in rutasArchivos)
+            await ActualizarDisponibilidadAsync(lamparaIds);
+
+            foreach (var ruta in rutasArchivos.Concat(rutasComprobantes))
             {
                 if (System.IO.File.Exists(ruta)) System.IO.File.Delete(ruta);
             }
